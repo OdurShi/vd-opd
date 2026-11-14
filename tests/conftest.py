@@ -84,17 +84,37 @@ def random_log_probs(shape: tuple[int, ...], seed: int = 0, scale: float = 2.0) 
     return torch.log_softmax(scale * torch.randn(*shape, generator=generator), dim=-1)
 
 
-def make_trainer(make_lm, codec, objective="vdopd", teacher=None, **train_kwargs) -> Trainer:
+def make_trainer(
+    make_lm,
+    codec,
+    objective="vdopd",
+    teacher=None,
+    *,
+    num_views=None,
+    views=None,
+    prompt_views=None,
+    **train_kwargs,
+) -> Trainer:
+    """Tiny trainer over the 50 synthetic problems with operands 0..4.
+
+    ``objective`` is an objective name or an objective instance; ``num_views``, ``views``
+    (a ``ViewConfig``) and ``prompt_views`` select the settings of the supplementary
+    experiments (K teacher views, student-side augmentation, file view pools).
+    """
     problems = make_arithmetic_problems(max_operand=4)
     defaults = {"seed": 11, "iterations": 4, "microbatch_size": 3, "position_block_size": 5}
     defaults.update(train_kwargs)
+    if isinstance(objective, str):
+        objective = build_objective(ObjectiveConfig(objective, num_views=num_views))
     return Trainer(
         student=make_lm(seed=1),
         teacher=teacher if teacher is not None else make_lm(seed=2, hidden_size=48),
         codec=codec,
         prompts=[build_messages(p.question, SYNTHETIC_TEMPLATE) for p in problems],
-        objective=build_objective(ObjectiveConfig(objective)),
+        objective=objective,
         rollout=RolloutConfig(batch_size=6, max_response_tokens=7, generation_batch_size=4),
         optim=OptimConfig(learning_rate=1e-3),
         train=TrainConfig(**defaults),
+        views=views,
+        prompt_views=prompt_views,
     )

@@ -1,0 +1,11 @@
+stratum,update,oracle_kl_decrease,oracle_kl_decrease_ci_low,oracle_kl_decrease_ci_high,shared_wrong_prob_change,shared_wrong_prob_change_ci_low,shared_wrong_prob_change_ci_high,correctness_change_pp,correctness_change_pp_ci_low,correctness_change_pp_ci_high
+Low,EOPD(full),-0.0021,-0.0061,+0.0019,+0.009,-0.003,+0.021,-0.28,-1.38,+0.82
+Low,Geometric-1,-0.0008,-0.0048,+0.0032,+0.006,-0.006,+0.018,-0.12,-1.22,+0.98
+Low,Batch-mean-Z,+0.0001,-0.0039,+0.0041,+0.004,-0.008,+0.016,+0.04,-1.06,+1.14
+Low,Shuffled-Z,-0.0004,-0.0044,+0.0036,+0.005,-0.007,+0.017,-0.03,-1.13,+1.07
+Low,VD-OPD,+0.0026,-0.0014,+0.0066,-0.003,-0.015,+0.009,+0.39,-0.71,+1.49
+High,EOPD(full),+0.0060,+0.0020,+0.0100,+0.008,-0.004,+0.020,+0.65,-0.45,+1.75
+High,Geometric-1,+0.0071,+0.0031,+0.0111,+0.009,-0.003,+0.021,+0.73,-0.37,+1.83
+High,Batch-mean-Z,+0.0074,+0.0034,+0.0114,+0.009,-0.003,+0.021,+0.77,-0.33,+1.87
+High,Shuffled-Z,+0.0073,+0.0033,+0.0113,+0.009,-0.003,+0.021,+0.75,-0.35,+1.85
+High,VD-OPD,+0.0079,+0.0039,+0.0119,+0.010,-0.002,+0.022,+0.84,-0.26,+1.94

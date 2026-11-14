@@ -334,3 +334,220 @@ off-policy KD, SKD, DistiLLM-2, GRPO), the cross-domain evaluations of Table 3
 `assets/paper_figures/fig01.png` to `fig06.png` are the six numbered figures of the paper,
 cropped from the PDF at 200 dpi without captions, page headers or margin line numbers by
 `scripts/extract_paper_figures.py` (crop rectangles are stored in the script).
+
+## 7. Supplementary experiments (E01-E18)
+
+The supplementary experiments extend Tables 1, 2, 4, 6-8 and 10 of the paper and add
+analyses of the cross-view agreement `Z`. Their reported tables are in
+`results/supplementary/` and `docs/supplementary_results.md`. This section maps each
+experiment to the code that runs it, lists what the experiment descriptions leave open
+together with the choice made here, and states what has been executed.
+
+### 7.1 Experiment-to-code map
+
+`<group>` is `qwen3_1p7b`, `qwen3_4b` or `llama3p2_3b`. `tables` stands for
+`python scripts/supplementary_tables.py --results-dir results --runs-dir runs --output-dir <dir>`,
+which writes CSV files with the file and column names of the reported tables.
+
+| ID | Experiment | Code | Configs | Command |
+|---|---|---|---|---|
+| E01 | Three-seed Avg@8 per benchmark, gain with 95% CI | `vdopd/eval/bootstrap.py`: `paired_question_bootstrap`, `seed_summary`; `vdopd/eval/tables.py`: `table_e01` | `configs/<group>/{eopd_full,vdopd}.yaml` | `scripts/run_experiment.sh <config>`; `tables --tables E01` |
+| E02-E04 | Complete Avg@8 / Pass@8 tables of the three students | `vdopd/eval/evaluator.py`: `evaluate`; `vdopd/eval/metrics.py`: `avg_at_k`, `pass_at_k`; `tables.py` | all method files in `configs/<group>/` | `scripts/run_experiment.sh <config>`; `scripts/evaluate_reference.sh <config> frozen_teacher <teacher>` and `... initial_student`; `tables --tables E02 E03 E04` |
+| E05 | Teacher and students under one protocol | `EvalConfig` defaults; `pipeline.py`: `evaluate_student`, `check_generation_suffix` | `configs/qwen3_4b/` (`model.expected_generation_suffix` in the base file) | `scripts/evaluate_reference.sh configs/qwen3_4b/vdopd.yaml frozen_teacher Qwen/Qwen3-8B`; `tables --tables E05` |
+| E06 | Compute- and view-matched controls | `objectives.py`: `TwoViewAverage`; `flops.py`: `budget_reached`; `bootstrap.py`: `stratified_paired_bootstrap` | `eopd_full`, `eopd_2v`, `vdopd`, `vdopd_budget` | `scripts/run_experiment.sh`; `tables --tables E06` |
+| E07 | Target x weight factorial | `objectives.py`: `ConsensusObjective`, `assign_weights` | `ablation_arithmetic`, `ablation_weighted_arithmetic`, `ablation_geometric`, `ablation_shuffled_weight`, `ablation_batch_mean_weight`, `vdopd` | `scripts/run_experiment.sh`; `tables --tables E07` |
+| E08 | Two versus four teacher views | `consensus.py`: `geometric_consensus(*views)`; `ConsensusObjective(num_views=K)`; `views.py`: `select_views(num_views=K)`; `Trainer._teacher_hidden` | `vdopd`, `vdopd_k4`, `vdopd_k4_budget` | `scripts/run_experiment.sh`; `tables --tables E08` |
+| E09 | Gradient agreement of the three view pairs | `diagnostics.py`: `pair_gradient_cosines` | `vdopd` | `python scripts/pair_gradient_cosine.py --config configs/qwen3_1p7b/vdopd.yaml --student <checkpoint>/student --csv <file>` (`--toy` on CPU) |
+| E10 | Training view pools | `view_pools.py` (file schema, `load_view_file`, `group_views`, `training_view_pool`); `views.py`: `RewrittenView`; `Trainer(prompt_views=...)`, `Trainer.summary` (mean `Z`) | `eopd_2v_paraphrase`, `vdopd_paraphrase`, `eopd_2v_lowquality`, `vdopd_lowquality` | `VDOPD_OVERRIDES="views.pool_file=<views.jsonl>" scripts/run_experiment.sh <config>`; `tables --tables E10` |
+| E11 | Baseline tuning | `tuning.py`: `TuningConfig`, `eopd_grid`, `select_best`; `pipeline.py`: `run_tuning_trial` | `eopd_top16_tuned`, `eopd_full_tuned`, `eopd_2v_tuned`; grid in the `tuning:` section | `python scripts/tune_eopd.py --config configs/qwen3_1p7b/eopd_full.yaml`; `scripts/run_experiment.sh configs/qwen3_1p7b/eopd_full_tuned.yaml`; `python scripts/aggregate_results.py --results-dir results/qwen3_1p7b --sd` |
+| E12-E13 | Unseen-wrapper robustness, macro and per benchmark | `metrics.py`: `view_robustness`, `sensitivity_gaps`, `greedy_answer_flip_rate`; `evaluator.py`: `greedy_answers` | `eopd_full`, `eopd_2v`, `eopd_full_studentaug`, `eopd_2v_studentaug`, `vdopd` | `VDOPD_OVERRIDES="evaluation.greedy_answers=true" scripts/run_experiment.sh <config>`; `tables --tables E12 E13` |
+| E14 | Student-side augmentation across view families | `trainer.py`: `ViewConfig.student_wrap_probability`; `select_views(student_wrap_probability=...)`; `views.py`: `ViewFamily` | `eopd_full_studentaug`, `eopd_2v_studentaug` | as E15; `tables --tables E14` |
+| E15 | Held-out structural changes and paraphrases | `views.py`: `TemplateView`, `STRUCTURAL_VIEWS`; `view_pools.py`: `paraphrase_family`; `metrics.py`: `parse_failure_rate`; `pipeline.py`: `evaluation_families` | any method file | `VDOPD_OVERRIDES="evaluation.view_families=[prefix,structural,paraphrase] evaluation.paraphrase_file=<views.jsonl> evaluation.greedy_answers=true" scripts/run_experiment.sh <config>`; `tables --tables E15` |
+| E16 | Teacher diagnostics by `Z` quartile | `diagnostics.py`: `build_analysis_states`, `state_agreement`, `hellinger_tail_split`, `sample_final_answers`, `pair_outcomes`, `agreement_summary` | `vdopd` | `python scripts/agreement_diagnostic.py --config configs/qwen3_1p7b/vdopd.yaml --student <checkpoint>/student --csv <file>` (`--toy` on CPU) |
+| E17 | Matched local updates by `Z` stratum | `diagnostics.py`: `matched_branch_updates`, `candidate_distributions`, `oracle_kl_decrease`, `shared_wrong_answers`, `stratum_means`; `bootstrap.py`: `clustered_mean_bootstrap` | `vdopd` | `python scripts/local_update_diagnostic.py --config configs/qwen3_1p7b/vdopd.yaml --supplementary --checkpoint <checkpoint> --candidates <candidates.jsonl> --csv <file>` (`--toy --supplementary` on CPU) |
+| E18 | Two-token example | `theory.py`: `two_token_example`, `geometric_pool` | - | `python examples/two_token_example.py` |
+
+Tests: `tests/test_bootstrap.py` (E01, E06-E08, E10, E17), `tests/test_multi_view.py` (E06,
+E07, E08, E18), `tests/test_view_pools.py` (E10, E14, structural views),
+`tests/test_robustness_eval.py` (E02-E05, E12-E15), `tests/test_agreement_diagnostics.py`
+(E09, E16, E17), `tests/test_result_tables.py` (table layout), `tests/test_tuning.py` (E11).
+
+### 7.2 Unspecified details and choices
+
+22. **Bootstrap (E01, E06-E08, E10, E17).** The descriptions fix the resampling unit (the
+    question, with its eight samples and paired seeds) but not the rest. Here: 10,000
+    resamples, percentile interval, generator seed 0 (`--resamples`, `--bootstrap-seed`).
+    A question's score is its mean over samples and seeds; a resample draws questions with
+    replacement and uses the paired difference of the two methods. For macro averages
+    questions are resampled within each benchmark and the benchmark means are averaged
+    without weights. The reported gain is the difference of the seed means; the interval
+    uses the seeds both methods have. Evaluation files store, per view, the number of
+    correct completions of every question (`questions.correct_counts`); files without them
+    give gains without intervals.
+23. **Common evaluation protocol (E02-E05).** "Three evaluations" is read as the three
+    evaluation seeds 11, 22, 33: a distilled student is evaluated once per training seed
+    with the paired evaluation seed, a fixed checkpoint (teacher, initial student) once per
+    evaluation seed (`scripts/evaluate_reference.sh`). All models pass through
+    `evaluate_student`, i.e. the teacher's chat template, `model.stop_tokens`, the decoding
+    section and `vdopd/eval/answers.py`. The Qwen3 base config requires every serialised
+    prompt to end with `<think>\n\n</think>\n\n` (`model.expected_generation_suffix`); this
+    string was written from the published Qwen3 chat template and has not been compared
+    with the tokenizer files, which were not available offline. Set it to `null` if it does
+    not match.
+24. **Budget-matched runs (E06, E08).** The total-FLOPs budget is checked between
+    iterations, so a budgeted run ends at the first iteration boundary at which the budget
+    is spent and exceeds it by less than one iteration; its learning-rate schedule is that
+    of the full run (item 8). The budgets in `vdopd_budget.yaml` (4.7e18) and
+    `vdopd_k4_budget.yaml` (5.8e18) are the reported totals in the paper's FLOPs
+    accounting; with this repository's analytic estimate (item 6) set them to the
+    `flops_total` of your own EOPD (full) and default VD-OPD runs.
+25. **K teacher views (E08).** `K = 4` is the original prompt plus all three wrappers of
+    Table 5. For a general `K`, all valid alternatives are used if there are at most
+    `K - 1`; otherwise `K - 1` are drawn uniformly without replacement and kept in pool
+    order. Missing views fall back to the identity transformation (an alternative that does
+    not fit the teacher context is replaced by the original prompt). The zero-mass skip rule
+    and the logged mass use `Z_K`. For `K = 2` the selection draws exactly as before.
+26. **Pair gradients (E09).** "The same fixed states" are the response positions of one
+    rollout batch of the diagnostic update problems (`--batch 0`) at the given student
+    checkpoint. For each of the three wrappers the gradient of the VD-OPD objective
+    (Equation 7, before clipping, all trainable parameters) is accumulated with every
+    response paired with that wrapper; the mean gradient is the arithmetic mean of the three.
+    The number of states and the checkpoint used for the reported values are not stated.
+27. **View-pool files (E10, E15).** The delivery format of externally produced views is not
+    specified; `vdopd/view_pools.py` defines one (JSON Lines with `problem_id`, `view`,
+    `question`, optional `pool`, `validated`). A record holds a rewritten *question*, which
+    is placed in the same prompt template as the original, so the instruction and answer
+    format stay verbatim. Validation is limited to what can be checked mechanically: the
+    schema, unknown problems, duplicates, a view equal to the original question, the
+    `validated` flag (`views.require_validated`), and at use time identical roles, earlier
+    turns and assistant prefix of the serialised prompt (`preserves_content_and_roles`).
+    Whether a paraphrase preserves conditions, variables and answer is the external
+    validator's statement. The "lower-quality, task-preserving" pool is a second `pool`
+    label of the same format. The second teacher view of a response is sampled uniformly
+    from its question's views; a question without views uses the identity fallback (logged
+    as `identity_view_fraction`). No view file is distributed; the configs point to
+    `data/view_pools/math_train.jsonl` as a placeholder.
+28. **Mean Z of a view pool (E10).** Not defined in the description. `Trainer.summary()`
+    reports the token mean of `Z` over all response positions scored during the run
+    (`summary.json`, also logged); the table takes it from the VD-OPD run of each pool.
+29. **Baseline tuning (E11).** The grid values are not stated. The default grid is
+    `tau in {0.6, 0.8, 1.0}` nats and `alpha in {0.8, 1.0, 1.2}` (`tuning.*`), centred on
+    the defaults and containing the three selected pairs. Each trial is one training run
+    with the seed of the config, scored by Avg@8 on the development split under the common
+    decoding protocol with the canonical prompt; ties go to the lower total training FLOPs
+    (Appendix B.4). One of the 500 development problems has an empty boxed answer in its
+    reference solution and is skipped. "Further evaluation" is read as three-seed runs of
+    the `*_tuned.yaml` configs. ToDi-OP, TSD-KD and Veto remain registration hooks (item 1);
+    the rerun settings named for them are: ToDi-OP with its published vocabulary-wise
+    mixing, TSD-KD with JSD parameter 0.9 and top-10 candidates, Veto with initial
+    `beta = 0.8` and linear decay.
+30. **Structural views (E15).** The description names the kinds of change ("instruction
+    relocation and layout/delimiter changes") but not the four views. The defaults are two
+    views that place a solving instruction after the problem
+    (`{content}\n\nPlease solve this problem.`,
+    `{content}\n\nDetermine the answer to the problem above.`) and two that change the
+    delimiter of a layout heading (`Question: {content}`, `---\n{content}\n---`). They are
+    this repository's choice; replace them with `evaluation.structural_views`.
+31. **Paraphrase family (E14, E15).** Read from `evaluation.paraphrase_file` in the format
+    of item 27; every evaluated question needs four views with the same four names, and
+    view `m` of every question forms "template" `m` for WorstTemplate.
+32. **Greedy answer flips and parse failures (E12, E15).** Neither is defined. A flip is a
+    (question, view) pair whose greedy final answer is not equivalent to the greedy final
+    answer under the canonical prompt, as a fraction of all pairs of the family
+    (`evaluation.flip_mode: question` counts questions with at least one flip instead); two
+    missing answers count as equal. Parse failures are the fraction of *sampled*
+    completions under the family's views without an extractable final answer. Canonical -
+    Mean and Mean - Worst are differences of the macro averages.
+33. **StudentAug (E14).** The wrapped prompt of a response is its sampled alternative
+    teacher view (one of the three training wrappers, uniform), and an independent draw with
+    probability 0.5 (`views.student_wrap_probability`, random stream `student_views`)
+    decides whether the student is rolled out and scored on it or on the original prompt.
+    The teacher views are selected as without augmentation. In the two-view variant the
+    teacher scores the original and the wrapped prompt. Which prompt the one-view variant's
+    teacher scores is not stated; by default it is the prompt the student was given
+    (`views.student_aug_teacher_view: student`; `original` is the alternative). A wrapped
+    prompt that does not fit the student context is not used.
+34. **Analysis states (E16, E17).** For each measurement question the student generates
+    four independent responses with the rollout settings and each is cut at one uniformly
+    sampled position (`--prefixes-per-question`); each question gets one alternative teacher
+    view, sampled uniformly from the valid training wrappers. Quartiles are four equal-sized
+    rank groups of `Z` over the states. The reported strata hold 243 and 251 states, which
+    an equal split of 1,000 states does not produce; the rule behind those sizes is not
+    stated.
+35. **Teacher diagnostics (E16).** The tail statistic of a stratum is its summed squared
+    Hellinger distance outside the union of both views' top-10 tokens divided by its summed
+    squared Hellinger distance (a share of the stratum's total, not a mean of per-state
+    shares). A continuation pair is one teacher continuation of the prefix under each view,
+    decoded with the evaluation protocol and the same random seeds; four pairs per state
+    (`--continuations`). Two incorrect continuations are "same wrong" only if both have a
+    final answer and the answers are equivalent; a pair with a missing answer is "different
+    wrong".
+36. **Matched local updates (E17).** The candidate answers of the measurement problems are
+    not published (item 18); they are read from `--candidates` (final-answer strings, the
+    correct one first) and scored as given, without EOS. A state is eligible for the
+    shared-wrong statistic if at least one of its teacher continuation pairs is "same
+    wrong"; its shared wrong answer is the one occurring in most such pairs. The student's
+    probability of that answer is its candidate probability (Equation 16) over the
+    problem's candidates, to which the shared wrong answer is added if it is not equivalent
+    to one of them. The correctness change is the change in accuracy of
+    `evaluation.decoding.num_samples` student continuations per state with paired seeds.
+    Intervals resample questions with all their states of the stratum. The "number of
+    effective update positions" is read as the `N_k` response positions of the shared
+    rollout batch. With `--checkpoint` a branch starts from a saved training checkpoint
+    (student weights and optimizer state) and uses the scheduled learning rate of its
+    iteration; with `--student` it uses the configured rate without warmup (item 17). Which
+    checkpoint is "middle" is not stated; `train.checkpoint_every` controls what is saved.
+37. **Tables.** GPU-hours are not recorded by this code and stay empty; FLOPs columns use
+    the analytic estimate of item 6. E11 is not produced by `supplementary_tables.py`
+    (`tune_eopd.py` writes `grid.json`; seed statistics come from `aggregate_results.py`).
+    E09, E16, E17 and E18 are written by their own scripts (`--csv`).
+
+### 7.3 Changes to existing code paths
+
+- `geometric_consensus`, `normalized_consensus` and `arithmetic_mean` accept more than two
+  views; the two-view case uses the same operations as before.
+- `PositionBlock.student_log_probs` caches the student log-softmax of a block. EOPD-2V
+  evaluated it once per term and the trainer once more for the logged entropy; all three
+  now share one evaluation. For EOPD-2V this changes floating-point rounding (the two terms
+  back-propagate through one node), not the objective. A five-iteration run on the tiny
+  test models gave identical losses, gradient norms and final weights before and after
+  these changes for the other twelve objectives; for EOPD-2V the first loss is identical
+  and later losses agree to five to six significant digits.
+- The consensus objectives return the mass they compute (`BlockLoss.mass`), so the trainer
+  no longer forms the target a second time for logging.
+- `matched_branch_updates` runs the frozen teacher once for all branches and statistics
+  passes (`Trainer.teacher_hidden_states`) instead of once per branch and pass.
+- `pack_prompt_and_response` builds the alignment index per response with tensor
+  operations instead of a Python loop over tokens; `candidate_logits` averages token
+  log-probabilities without a Python loop.
+- `theory.consensus_mass` forms the product of probabilities as a mean of logarithms; the
+  previous `sqrt(p0 * pT)` underflowed for products below the float64 range.
+- `position_statistics` scores the student on the prompt it was given
+  (`ViewPair.student_prompt_ids`), which equals the original prompt unless StudentAug is on.
+
+### 7.4 Record of runs
+
+The code of this section was exercised as follows; no supplementary experiment was run with
+the paper's models, and none of the reported numbers was regenerated.
+
+- **Unit tests** (offline, CPU, tiny random models and stub models; Python 3.11 only): all
+  functions listed in 7.1, including the equality of blockwise and direct gradients for
+  four views, the FLOPs of four views, the budget stop, view selection from a file pool,
+  StudentAug, evaluation over three view families with greedy flips and parse failures,
+  the cached teacher states, and the table layout on synthetic evaluation files.
+- **Toy pair** (`--toy`, the synthetic arithmetic task of the quick start):
+  `scripts/pair_gradient_cosine.py`, `scripts/agreement_diagnostic.py` (160 states from 40
+  questions) and `scripts/local_update_diagnostic.py --supplementary` (also from a saved toy
+  checkpoint with `--checkpoint`) run to completion and write CSV files with the columns of
+  the reported tables. The toy candidates of E17 are the integer answer and three near
+  misses, a scaffold of the toy task only.
+- **Closed form**: `examples/two_token_example.py` reproduces the E18 table exactly.
+- **Not executed**: training or evaluation with Qwen3 or Llama models for any of E01-E17;
+  `scripts/tune_eopd.py` beyond `--dry-run` (its trial function was run with a tiny model
+  and the synthetic test split); `scripts/evaluate_reference.sh` (its command lines were
+  checked with a stub in place of `vdopd`);
+  training with a file view pool or evaluation on a paraphrase family beyond the
+  hand-written three-question fixture `tests/fixtures/view_pool.jsonl`;
+  `scripts/supplementary_tables.py` on real evaluation files (it was run on synthetic files
+  and on the reduced-scale results, which lack per-question records). The view checks were
+  also run against one real ChatML chat template available offline (SmolLM2 tokenizer).

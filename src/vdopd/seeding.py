@@ -9,12 +9,25 @@ from __future__ import annotations
 
 import numpy as np
 
-_STREAMS = {"order": 0, "rollout": 1, "views": 2, "weights": 3, "evaluation": 4, "init": 5}
+_STREAMS = {
+    "order": 0,
+    "rollout": 1,
+    "views": 2,
+    "weights": 3,
+    "evaluation": 4,
+    "init": 5,
+    # Streams of the supplementary experiments. They are separate from the ones above, so
+    # enabling student-side augmentation (E14) or sampling analysis states (E16, E17) leaves
+    # prompt order, rollouts and teacher-view selection of a run unchanged.
+    "student_views": 6,
+    "states": 7,
+}
 
 
 def derive_seed(seed: int, stream: str, *indices: int) -> int:
     """Derive a 32-bit seed for ``stream`` (one of ``order``, ``rollout``, ``views``,
-    ``weights``, ``evaluation``, ``init``) and optional integer indices."""
+    ``weights``, ``evaluation``, ``init``, ``student_views``, ``states``) and optional
+    integer indices."""
     if stream not in _STREAMS:
         raise KeyError(f"unknown random stream {stream!r}")
     entropy = [int(seed), _STREAMS[stream], *[int(i) for i in indices]]

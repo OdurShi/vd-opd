@@ -60,20 +60,22 @@ def pack_prompt_and_response(
     width = max(lengths) if lengths else 0
     input_ids = torch.full((len(prompts), width), pad_token_id, dtype=torch.long)
     attention_mask = torch.zeros((len(prompts), width), dtype=torch.long)
-    gather: list[int] = []
-    tokens: list[int] = []
+    gather: list[Tensor] = []
+    tokens: list[Tensor] = []
     for row, (prompt, response) in enumerate(zip(prompts, responses, strict=True)):
-        sequence = list(prompt) + list(response)
-        input_ids[row, : len(sequence)] = torch.as_tensor(sequence, dtype=torch.long)
-        attention_mask[row, : len(sequence)] = 1
+        response_ids = torch.as_tensor(list(response), dtype=torch.long)
+        input_ids[row, : len(prompt)] = torch.as_tensor(list(prompt), dtype=torch.long)
+        input_ids[row, len(prompt) : lengths[row]] = response_ids
+        attention_mask[row, : lengths[row]] = 1
         first = row * width + len(prompt) - 1
-        gather.extend(range(first, first + len(response)))
-        tokens.extend(int(t) for t in response)
+        gather.append(torch.arange(first, first + len(response), dtype=torch.long))
+        tokens.append(response_ids)
+    empty = torch.empty(0, dtype=torch.long)
     return PackedBatch(
         input_ids=input_ids,
         attention_mask=attention_mask,
-        gather_index=torch.as_tensor(gather, dtype=torch.long),
-        tokens=torch.as_tensor(tokens, dtype=torch.long),
+        gather_index=torch.cat(gather) if gather else empty,
+        tokens=torch.cat(tokens) if tokens else empty,
         num_tokens=int(sum(lengths)),
     )
 

@@ -10,4 +10,5 @@ model:
   # serialisation identical across runs (our choice; the paper does not state the string).
   chat_template_kwargs:
     date_string: "26 Jul 2024"
+  expected_generation_suffix: null   # the Llama template has no thinking block
   stop_tokens: ["<|eot_id|>"]

@@ -13,6 +13,9 @@ model:
   # used for both teacher and student.
   chat_template_kwargs:
     enable_thinking: false
+  # Every serialised prompt must end with the empty thinking block; a template that does
+  # not produce it is rejected before any model runs (set to null to disable the check).
+  expected_generation_suffix: "<think>\n\n</think>\n\n"
   stop_tokens: ["<|im_end|>"]
 
 data:

@@ -22,6 +22,7 @@ env/
 /runs/
 /results/*
 !/results/reduced_scale/
+!/results/supplementary/
 /outputs/
 /checkpoints/
 /wandb/
@@ -36,10 +37,11 @@ env/
 /data/benchmarks/minerva.jsonl
 /data/cache/
 
-# Figures produced by scripts (the paper figures in assets/ are tracked)
+# Figures produced by scripts (the figures in assets/ are tracked)
 *.png
 *.pdf
 !/assets/paper_figures/*.png
+!/assets/supplementary/*.png
 
 # OS / editors
 .DS_Store

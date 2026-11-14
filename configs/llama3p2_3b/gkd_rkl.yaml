@@ -1,0 +1,6 @@
+_base_: base.yaml
+name: llama3p2_3b-gkd_rkl
+objective:
+  name: gkd_rkl
+train:
+  output_dir: runs/llama3p2_3b/gkd_rkl/seed11

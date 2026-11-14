@@ -1,0 +1,4 @@
+setting,macro_avg8_mean,macro_avg8_sd,worst_view,flops_1e18,gpu_hours,gain_over_k2,gain_over_k2_ci_low,gain_over_k2_ci_high
+K=2,36.7,0.62,30.2,5.8,37.2,,,
+"K=4, same updates",37.1,0.65,30.6,8.0,51.3,+0.4,-0.3,+1.1
+"K=4, same FLOPs",36.3,0.70,30.0,5.8,37.5,-0.4,-1.2,+0.4

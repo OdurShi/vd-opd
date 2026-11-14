@@ -1,0 +1,13 @@
+# EOPD-2V + StudentAug (supplementary E12-E15): the student is rolled out and scored on the
+# original prompt or on the wrapped prompt with equal probability; the teacher scores both
+# views (original and wrapped) and the two EOPD (full) terms are averaged (Equation 13).
+_base_: ../base_qwen3_1p7b.yaml
+name: eopd-2v-studentaug
+objective:
+  name: eopd_2v
+  eopd_entropy_threshold: 0.8       # evaluated separately for each view
+  eopd_fkl_weight: 1.0
+views:
+  student_wrap_probability: 0.5     # original and wrapped prompts with equal probability
+train:
+  output_dir: runs/qwen3_1p7b/eopd_2v_studentaug/seed11

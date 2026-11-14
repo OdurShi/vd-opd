@@ -39,6 +39,10 @@ class HFChatCodec:
         # The template already contains every special token (e.g. BOS) it needs.
         return list(self.tokenizer(self.render(messages), add_special_tokens=False)["input_ids"])
 
+    def encode_text(self, text: str) -> list[int]:
+        """Token ids of plain text without special tokens (candidate answers, Equation 15)."""
+        return list(self.tokenizer(text, add_special_tokens=False)["input_ids"])
+
     def decode(self, token_ids: Sequence[int]) -> str:
         return self.tokenizer.decode(list(token_ids), skip_special_tokens=True)
 
@@ -119,6 +123,10 @@ class SimpleChatCodec:
             ids.append(tok.token_id(CharTokenizer.END))
         ids.append(tok.token_id(CharTokenizer.ASSISTANT))
         return ids
+
+    def encode_text(self, text: str) -> list[int]:
+        """Token ids of plain text without special tokens (candidate answers, Equation 15)."""
+        return self.tokenizer.encode_text(text)
 
     def encode_response(self, text: str) -> list[int]:
         """Token ids of an assistant response followed by EOS (used for toy pretraining)."""

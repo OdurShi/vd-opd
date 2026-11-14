@@ -1,0 +1,4 @@
+comparison,budget_matched,baseline_flops_1e18,vd_flops_1e18,baseline_macro_avg8_mean,baseline_macro_avg8_sd,vd_macro_avg8_mean,vd_macro_avg8_sd,vd_gain,vd_gain_ci_low,vd_gain_ci_high
+EOPD(full) vs. VD-Budget,equal total FLOPs,4.7,4.7,34.82,0.62,36.00,0.62,+1.2,+0.2,+2.2
+EOPD(2V) vs. VD-OPD,equal two-view / update budget,5.8,5.8,35.30,0.63,36.70,0.62,+1.4,+0.4,+2.4
+EOPD(full) vs. VD-OPD,none (unmatched),4.7,5.8,34.82,0.62,36.70,0.62,+1.9,+0.9,+2.9

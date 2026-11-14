@@ -1,0 +1,18 @@
+# VD-OPD trained with validated paraphrases as alternative teacher views instead of the
+# simple templates of Table 5 (supplementary E10, "random valid paraphrases"): the second
+# teacher view of a response is sampled uniformly from the paraphrases of its question.
+#
+# The views are written and validated outside this repository and are not distributed with
+# it; vdopd/view_pools.py documents the file format. Point `views.pool_file` to your file:
+#   vdopd train --config <this file> --set views.pool_file=<views.jsonl>
+_base_: ../base_qwen3_1p7b.yaml
+name: vdopd-paraphrase
+objective:
+  name: vdopd
+views:
+  pool: file
+  pool_file: data/view_pools/math_train.jsonl
+  pool_name: validated_paraphrase
+  require_validated: true
+train:
+  output_dir: runs/qwen3_1p7b/vdopd_paraphrase/seed11

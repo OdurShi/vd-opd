@@ -1,0 +1,6 @@
+_base_: base.yaml
+name: qwen3_4b-gkd_fkl
+objective:
+  name: gkd_fkl
+train:
+  output_dir: runs/qwen3_4b/gkd_fkl/seed11

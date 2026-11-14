@@ -1,0 +1,15 @@
+{"problem_id": "synthetic/2+3", "view": "paraphrase_1", "question": "Compute 2+3.", "pool": "validated_paraphrase", "validated": true}
+{"problem_id": "synthetic/2+3", "view": "paraphrase_2", "question": "What does 2+3 equal?", "pool": "validated_paraphrase", "validated": true}
+{"problem_id": "synthetic/2+3", "view": "paraphrase_3", "question": "Find the value of 2+3.", "pool": "validated_paraphrase", "validated": true}
+{"problem_id": "synthetic/2+3", "view": "paraphrase_4", "question": "Evaluate 2+3.", "pool": "validated_paraphrase", "validated": true}
+{"problem_id": "synthetic/4-1", "view": "paraphrase_1", "question": "Compute 4-1.", "pool": "validated_paraphrase", "validated": true}
+{"problem_id": "synthetic/4-1", "view": "paraphrase_2", "question": "What does 4-1 equal?", "pool": "validated_paraphrase", "validated": true}
+{"problem_id": "synthetic/4-1", "view": "paraphrase_3", "question": "Find the value of 4-1.", "pool": "validated_paraphrase", "validated": true}
+{"problem_id": "synthetic/4-1", "view": "paraphrase_4", "question": "Evaluate 4-1.", "pool": "validated_paraphrase", "validated": true}
+{"problem_id": "synthetic/1+1", "view": "paraphrase_1", "question": "Compute 1+1.", "pool": "validated_paraphrase", "validated": true}
+{"problem_id": "synthetic/1+1", "view": "paraphrase_2", "question": "What does 1+1 equal?", "pool": "validated_paraphrase", "validated": true}
+{"problem_id": "synthetic/1+1", "view": "paraphrase_3", "question": "Find the value of 1+1.", "pool": "validated_paraphrase", "validated": true}
+{"problem_id": "synthetic/1+1", "view": "paraphrase_4", "question": "Evaluate 1+1.", "pool": "validated_paraphrase", "validated": true}
+{"problem_id": "synthetic/2+3", "view": "terse_1", "question": "2+3 = ?", "pool": "lower_quality", "validated": true}
+{"problem_id": "synthetic/4-1", "view": "terse_1", "question": "4-1 = ?", "pool": "lower_quality", "validated": true}
+{"problem_id": "synthetic/1+1", "view": "terse_1", "question": "1+1 = ?", "pool": "lower_quality", "validated": false, "notes": "not yet checked"}

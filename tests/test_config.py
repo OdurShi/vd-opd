@@ -21,7 +21,7 @@ def test_all_configs_load_and_build_an_objective():
     for path in METHOD_FILES:
         cfg = load_config(path)
         objective = build_objective(cfg.objective)
-        assert objective.num_views in (1, 2), path
+        assert objective.num_views in (1, 2, 4), path  # 4: the K = 4 runs of E08
 
 
 def test_main_setting_matches_the_paper():

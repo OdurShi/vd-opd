@@ -22,7 +22,9 @@ from vdopd.data.problems import DEFAULT_PROMPT_TEMPLATE
 from vdopd.eval.evaluator import EvalConfig
 from vdopd.objectives import ObjectiveConfig
 from vdopd.optim import OptimConfig
-from vdopd.trainer import RolloutConfig, TrainConfig
+from vdopd.trainer import RolloutConfig, TrainConfig, ViewConfig
+from vdopd.tuning import TuningConfig
+from vdopd.views import PREFIX_FAMILY, STRUCTURAL_VIEWS
 
 
 @dataclass(frozen=True)
@@ -41,6 +43,10 @@ class ModelConfig:
     stop_tokens: tuple[str, ...] = ("<|im_end|>",)
     teacher_context: int | None = None
     student_context: int | None = None
+    # If set, every serialised prompt must end with this text. For Qwen3 it is the assistant
+    # prefix followed by the fixed empty thinking block, so a template that does not produce
+    # the non-thinking serialisation is rejected before any model runs (Appendix B.4).
+    expected_generation_suffix: str | None = None
 
 
 @dataclass(frozen=True)
@@ -63,12 +69,33 @@ class DataConfig:
 
 @dataclass(frozen=True)
 class EvaluationConfig:
-    """Benchmarks, views and decoding protocol (Appendix B.2)."""
+    """Benchmarks, views and decoding protocol (Appendix B.2).
+
+    The fields after ``seen_wrappers`` belong to the supplementary robustness experiments
+    (E12-E15). ``view_families`` lists the held-out families to evaluate when
+    ``unseen_wrappers`` is on: ``prefix`` (the four wrappers of Appendix B.2.2),
+    ``structural`` (``structural_views``, name/template pairs with one ``{content}``
+    placeholder) and ``paraphrase`` (four verified paraphrases per question, read from
+    ``paraphrase_file``). ``greedy_answers`` adds one greedy completion per question and
+    view to measure answer flips (``flip_mode``: ``pair`` or ``question``).
+    ``keep_questions`` stores per-question results for the paired question bootstrap.
+    """
 
     benchmarks: tuple[str, ...] = SIX_MATH
     limit: int | None = None
     unseen_wrappers: bool = True
     seen_wrappers: bool = False
+    view_families: tuple[str, ...] = (PREFIX_FAMILY,)
+    structural_views: tuple[tuple[str, str], ...] = tuple(
+        (view.name, view.template) for view in STRUCTURAL_VIEWS
+    )
+    paraphrase_file: str | None = None
+    paraphrase_pool: str | None = None
+    paraphrase_views: int = 4
+    paraphrase_require_validated: bool = True
+    greedy_answers: bool = False
+    flip_mode: str = "pair"
+    keep_questions: bool = True
     decoding: EvalConfig = field(default_factory=EvalConfig)
 
 
@@ -81,9 +108,11 @@ class ExperimentConfig:
     data: DataConfig = field(default_factory=DataConfig)
     rollout: RolloutConfig = field(default_factory=RolloutConfig)
     objective: ObjectiveConfig = field(default_factory=ObjectiveConfig)
+    views: ViewConfig = field(default_factory=ViewConfig)
     optim: OptimConfig = field(default_factory=OptimConfig)
     train: TrainConfig = field(default_factory=TrainConfig)
     evaluation: EvaluationConfig = field(default_factory=EvaluationConfig)
+    tuning: TuningConfig = field(default_factory=TuningConfig)
 
 
 def _coerce(value: Any, hint: Any, where: str) -> Any:

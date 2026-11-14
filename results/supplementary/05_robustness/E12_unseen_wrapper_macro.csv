@@ -1,0 +1,6 @@
+method,canonical,mean_view,worst_view,worst_template,canonical_minus_mean,mean_minus_worst,greedy_answer_flips_pct
+EOPD(full),34.8,32.8,28.9,30.1,2.0,3.9,27
+EOPD(2V),35.3,33.0,29.3,30.5,2.3,3.7,26
+EOPD(full)+StudentAug,35.0,33.0,29.6,30.4,2.0,3.4,24
+EOPD(2V)+StudentAug,35.7,33.5,30.0,30.9,2.2,3.5,22
+VD-OPD,36.7,33.7,30.2,31.1,3.0,3.5,23

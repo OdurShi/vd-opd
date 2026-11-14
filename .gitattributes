@@ -1,0 +1,2 @@
+# The reported tables are kept byte-for-byte (they use CRLF line endings).
+results/supplementary/**/*.csv -text

@@ -1,0 +1,4 @@
+model,math500_avg8,math500_pass8
+Qwen3-8B teacher,72.8,91.4
+"Qwen3-4B, EOPD(full)",74.3,92.6
+"Qwen3-4B, VD-OPD",76.1,93.4

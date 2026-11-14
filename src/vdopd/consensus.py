@@ -5,6 +5,10 @@ and D.2. All functions take *log-probabilities* over the last dimension, work on
 leading dimensions, use natural logarithms, and reduce in float32 (Appendix A.2 and B.4).
 Zero probabilities are represented by ``-inf`` log-probabilities and handled with the
 convention ``0 log 0 = 0``.
+
+The consensus functions also accept more than two views: with ``K`` views the target is
+``c_K(a) = (prod_m p_m(a))^(1/K)`` with mass ``Z_K = sum_a c_K(a)`` (supplementary
+experiment E08). Products are always formed as sums of log-probabilities.
 """
 
 from __future__ import annotations
@@ -57,12 +61,19 @@ def view_decomposition(log_p1: Tensor, log_p2: Tensor) -> tuple[Tensor, Tensor]:
     return (s1 + s2) * _SQRT_HALF, (s1 - s2) * _SQRT_HALF
 
 
-def arithmetic_mean(log_p1: Tensor, log_p2: Tensor) -> Tensor:
-    """Arithmetic pool ``p_bar = (p1 + p2) / 2`` (Section 4.2, Table 4)."""
-    return 0.5 * (log_p1.float().exp() + log_p2.float().exp())
+def arithmetic_mean(log_p1: Tensor, log_p2: Tensor, *more_views: Tensor) -> Tensor:
+    """Arithmetic pool ``p_bar = (1/K) sum_m p_m`` (Section 4.2, Table 4; ``K = 2`` there)."""
+    if not more_views:
+        return 0.5 * (log_p1.float().exp() + log_p2.float().exp())
+    total = log_p1.float().exp() + log_p2.float().exp()
+    for log_p in more_views:
+        total = total + log_p.float().exp()
+    return total / (2 + len(more_views))
 
 
-def geometric_consensus(log_p1: Tensor, log_p2: Tensor) -> tuple[Tensor, Tensor]:
+def geometric_consensus(
+    log_p1: Tensor, log_p2: Tensor, *more_views: Tensor
+) -> tuple[Tensor, Tensor]:
     """Unnormalised geometric consensus target and its retained mass (Equations 4 and 5).
 
     The target is formed exactly as in Appendix A.2, by averaging full-vocabulary
@@ -70,15 +81,27 @@ def geometric_consensus(log_p1: Tensor, log_p2: Tensor) -> tuple[Tensor, Tensor]
     log-probabilities (rather than applying a softmax to averaged logits) is what retains
     the mass ``Z = 1^T c = <sqrt(p1), sqrt(p2)>`` (the Bhattacharyya affinity) in ``[0, 1]``.
 
+    With ``K > 2`` views (supplementary experiment E08) the joint target is
+    ``c_K = exp{(1/K) sum_m log p_m} = (prod_m p_m)^(1/K)`` with ``Z_K = 1^T c_K``, again in
+    ``[0, 1]`` by the generalised Hoelder inequality. The two-view case is evaluated with
+    the same operations as before, so its values are unchanged.
+
     Args:
         log_p1: log-probabilities of the first (original-prompt) teacher view, ``[..., d]``.
         log_p2: log-probabilities of the second (wrapped-prompt) teacher view, ``[..., d]``.
+        more_views: log-probabilities of further teacher views, ``[..., d]`` each.
 
     Returns:
         ``(c, Z)`` with shapes ``[..., d]`` and ``[...]``, both float32 and detached from
         the teacher graph.
     """
-    log_c = 0.5 * (log_p1.detach().float() + log_p2.detach().float())
+    if not more_views:
+        log_c = 0.5 * (log_p1.detach().float() + log_p2.detach().float())
+    else:
+        total = log_p1.detach().float() + log_p2.detach().float()
+        for log_p in more_views:
+            total = total + log_p.detach().float()
+        log_c = total / (2 + len(more_views))
     c = log_c.exp()
     return c, c.sum(-1)
 
@@ -105,12 +128,15 @@ def generalized_kl(v: Tensor, w: Tensor) -> Tensor:
     return (ratio_term - v + w).sum(-1)
 
 
-def normalized_consensus(log_p1: Tensor, log_p2: Tensor) -> tuple[Tensor, Tensor]:
+def normalized_consensus(
+    log_p1: Tensor, log_p2: Tensor, *more_views: Tensor
+) -> tuple[Tensor, Tensor]:
     """Normalised geometric target ``r = c / Z`` (the logarithmic opinion pool) and ``Z``.
 
     At ``Z = 0`` the normalised target is undefined; this function then returns zeros for
-    ``r`` so that the corresponding position contributes nothing downstream.
+    ``r`` so that the corresponding position contributes nothing downstream. Further views
+    are pooled jointly as in :func:`geometric_consensus`.
     """
-    c, mass = geometric_consensus(log_p1, log_p2)
+    c, mass = geometric_consensus(log_p1, log_p2, *more_views)
     safe = mass.clamp_min(torch.finfo(c.dtype).tiny).unsqueeze(-1)
     return torch.where(mass.unsqueeze(-1) > 0, c / safe, torch.zeros_like(c)), mass

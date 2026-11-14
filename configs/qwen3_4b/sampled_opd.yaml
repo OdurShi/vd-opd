@@ -1,0 +1,6 @@
+_base_: base.yaml
+name: qwen3_4b-sampled_opd
+objective:
+  name: sampled_opd
+train:
+  output_dir: runs/qwen3_4b/sampled_opd/seed11

@@ -1,0 +1,7 @@
+target,weight,macro_avg8_mean,macro_avg8_sd,vd_gain,vd_gain_ci_low,vd_gain_ci_high
+Arithmetic,1,35.0,0.47,+1.7,+0.9,+2.5
+Arithmetic,Z,35.7,0.47,+1.0,+0.2,+1.8
+Geometric,1,36.1,0.47,+0.6,-0.2,+1.4
+Geometric,shuffled Z,36.2,0.47,+0.5,-0.1,+1.1
+Geometric,batch-mean Z,36.4,0.47,+0.3,-0.3,+0.9
+Geometric (VD-OPD),state-specific Z,36.7,0.62,,,

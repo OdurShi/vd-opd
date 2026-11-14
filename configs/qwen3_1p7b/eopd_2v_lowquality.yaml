@@ -1,0 +1,19 @@
+# EOPD-2V trained with lower-quality but task-preserving alternative teacher views
+# (supplementary E10, "lower-quality, task-preserving").
+#
+# The views are written and validated outside this repository and are not distributed with
+# it; vdopd/view_pools.py documents the file format. Point `views.pool_file` to your file:
+#   vdopd train --config <this file> --set views.pool_file=<views.jsonl>
+_base_: ../base_qwen3_1p7b.yaml
+name: eopd-2v-lowquality
+objective:
+  name: eopd_2v
+  eopd_entropy_threshold: 0.8
+  eopd_fkl_weight: 1.0
+views:
+  pool: file
+  pool_file: data/view_pools/math_train.jsonl
+  pool_name: lower_quality
+  require_validated: true
+train:
+  output_dir: runs/qwen3_1p7b/eopd_2v_lowquality/seed11

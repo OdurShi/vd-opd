@@ -9,6 +9,9 @@ Each cell is the mean over the available seeds; the six-benchmark score is the u
 benchmark mean within each seed followed by the mean across seeds (Appendix B.5.3). Use
 ``--metric`` to pick Avg@k (Tables 1, 4), Pass@k (Table 6) or an unseen-wrapper metric
 (Table 3), and ``--baseline`` to print gains in percentage points (Figure 4).
+
+``scripts/supplementary_tables.py`` reads the same layout and writes the tables of the
+supplementary experiments (seed SDs, paired-bootstrap intervals, view families) as CSV files.
 """
 
 from __future__ import annotations

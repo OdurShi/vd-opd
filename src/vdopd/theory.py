@@ -8,6 +8,7 @@ diagnostic of Appendix B.8. Nothing here enters the training objective.
 from __future__ import annotations
 
 from collections.abc import Sequence
+from typing import Any
 
 import numpy as np
 
@@ -45,9 +46,52 @@ def pooled_target(z0: np.ndarray, delta: np.ndarray) -> np.ndarray:
     return softmax(np.asarray(z0, dtype=np.float64) + 0.5 * np.asarray(delta, dtype=np.float64))
 
 
-def consensus_mass(p0: np.ndarray, pt: np.ndarray) -> float:
-    """``Z = sum_a sqrt(p0(a) pT(a))`` (Equation 5)."""
-    return float(np.sqrt(np.asarray(p0, dtype=np.float64) * np.asarray(pt, dtype=np.float64)).sum())
+def geometric_pool(*views: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """Geometric consensus of ``K >= 1`` probability vectors: ``(c, Z, r)``.
+
+    ``c(a) = (prod_m p_m(a))^(1/K)`` (Equation 4 for ``K = 2``; supplementary experiment
+    E08 for ``K = 4``), ``Z = sum_a c(a)`` (Equation 5) and ``r = c / Z``. The product is
+    formed as a mean of log-probabilities, so it neither underflows for small
+    probabilities nor loses the exact zero of a token that one view excludes. Views may
+    carry leading batch dimensions. At ``Z = 0`` the normalised target is undefined and
+    ``r`` is returned as zeros.
+    """
+    if not views:
+        raise ValueError("at least one view is required")
+    stacked = np.stack([np.asarray(view, dtype=np.float64) for view in views])
+    with np.errstate(divide="ignore"):
+        c = np.exp(np.log(stacked).mean(axis=0))
+    mass = c.sum(axis=-1)
+    denominator = np.expand_dims(mass, -1)
+    r = np.divide(c, denominator, out=np.zeros_like(c), where=denominator > 0)
+    return c, mass, r
+
+
+def consensus_mass(p0: np.ndarray, pt: np.ndarray, *more_views: np.ndarray) -> float:
+    """``Z = sum_a sqrt(p0(a) pT(a))`` (Equation 5); with further views, ``Z_K`` of E08."""
+    return float(geometric_pool(p0, pt, *more_views)[1])
+
+
+def two_token_example() -> list[dict[str, Any]]:
+    """Two-token illustration of Appendix D.1 (supplementary experiment E18).
+
+    Two pairs of teacher views over a two-token vocabulary share the normalised target
+    ``r = (1/2, 1/2)`` but differ in the retained mass: identical uncertain views keep
+    ``Z = 1``, confident views that select opposite tokens keep
+    ``Z = 2 sqrt(0.99 * 0.01) = 0.199`` (three decimals). Each row holds ``case``, the two
+    views ``p1`` and ``p2``, the normalised consensus ``r`` and the mass ``z``.
+    """
+    cases = (
+        ("Shared uncertainty", (0.5, 0.5), (0.5, 0.5)),
+        ("Contradictory confidence", (0.99, 0.01), (0.01, 0.99)),
+    )
+    rows = []
+    for name, p1, p2 in cases:
+        _, mass, r = geometric_pool(p1, p2)
+        rows.append(
+            {"case": name, "p1": p1, "p2": p2, "r": tuple(float(v) for v in r), "z": float(mass)}
+        )
+    return rows
 
 
 def tilt_gap(p: np.ndarray, w: np.ndarray) -> float:

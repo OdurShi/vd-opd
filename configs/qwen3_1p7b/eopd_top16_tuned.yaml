@@ -1,0 +1,12 @@
+# EOPD (top-16) with the coefficients selected on the development split (supplementary E11):
+# entropy threshold tau = 0.8 nats, forward-KL coefficient alpha = 1.0. The search itself
+# is `python scripts/tune_eopd.py --config configs/qwen3_1p7b/eopd_top16.yaml`.
+_base_: ../base_qwen3_1p7b.yaml
+name: eopd-top16-tuned
+objective:
+  name: eopd_top16
+  eopd_entropy_threshold: 0.8
+  eopd_fkl_weight: 1.0
+  eopd_top_k: 16
+train:
+  output_dir: runs/qwen3_1p7b/eopd_top16_tuned/seed11

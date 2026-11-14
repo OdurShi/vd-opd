@@ -1,0 +1,14 @@
+# EOPD (full) + StudentAug (supplementary E12-E15): the student is rolled out and scored on
+# the original prompt or on a wrapped prompt (one of the three training wrappers) with equal
+# probability; the teacher scores one view per response.
+_base_: ../base_qwen3_1p7b.yaml
+name: eopd-full-studentaug
+objective:
+  name: eopd_full
+  eopd_entropy_threshold: 0.8       # nats
+  eopd_fkl_weight: 1.0
+views:
+  student_wrap_probability: 0.5     # original and wrapped prompts with equal probability
+  student_aug_teacher_view: student # the one teacher view is the prompt the student was given
+train:
+  output_dir: runs/qwen3_1p7b/eopd_full_studentaug/seed11

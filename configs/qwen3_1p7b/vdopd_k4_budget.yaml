@@ -1,0 +1,15 @@
+# VD-OPD with K = 4 teacher views, shortened to the total-FLOPs budget of the default
+# K = 2 run (supplementary E08, "K=4, same FLOPs").
+#
+# 5.8e18 is the reported total of the default VD-OPD run in the paper's own FLOPs
+# accounting. This repository estimates FLOPs analytically (vdopd/flops.py), so to reproduce
+# the control set the budget to the `flops_total` recorded at the end of your own K = 2 run:
+#   vdopd train --config configs/qwen3_1p7b/vdopd_k4_budget.yaml --set train.max_total_flops=<value>
+_base_: ../base_qwen3_1p7b.yaml
+name: vd-opd-k4-budget
+objective:
+  name: vdopd
+  num_views: 4
+train:
+  max_total_flops: 5.8e18
+  output_dir: runs/qwen3_1p7b/vdopd_k4_budget/seed11

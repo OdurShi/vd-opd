@@ -14,6 +14,10 @@ Implemented from the paper:
 * sampled-token OPD and EOPD with top-k or full-vocabulary forward KL (Appendix B.3.1);
 * EOPD-2V (Equation 13).
 
+Supplementary experiments: the target x weight factorial of E07 is the consensus family
+above; the joint ``K``-view target ``c_K = (prod_m p_m)^(1/K)`` of E08 is
+``ConsensusObjective(num_views=K)``.
+
 ToDi, TSD-KD, Veto and CROP are *not* specified precisely enough in the paper to be
 re-implemented from it; they are exposed as named hooks, see :func:`register_objective`.
 """
@@ -59,14 +63,32 @@ class PositionBlock:
     teacher_log_probs: tuple[Tensor, ...]
     tokens: Tensor
     assigned_weight: Tensor | None = None
+    _student_log_probs: Tensor | None = field(default=None, init=False, repr=False, compare=False)
+
+    @property
+    def student_log_probs(self) -> Tensor:
+        """Float32 ``log q`` (full-vocabulary log-softmax of the student logits).
+
+        Computed once per block and shared by every term that reads it (both terms of
+        EOPD-2V, the logged student entropy), so the vocabulary-sized softmax is not
+        repeated.
+        """
+        if self._student_log_probs is None:
+            self._student_log_probs = F.log_softmax(self.student_logits.float(), dim=-1)
+        return self._student_log_probs
 
 
 @dataclass
 class BlockLoss:
-    """Per-position loss and the supervision weight that was applied at each position."""
+    """Per-position loss and the supervision weight that was applied at each position.
+
+    ``mass`` is the retained consensus mass ``Z`` when the objective computed it (the
+    consensus family); the trainer then logs it without forming the target a second time.
+    """
 
     loss: Tensor
     weight: Tensor
+    mass: Tensor | None = None
 
 
 class Objective(Protocol):
@@ -94,17 +116,23 @@ class ConsensusObjective:
     Per-position loss ``-w_t s_t^T log q_t``. For VD-OPD the product ``w_t s_t`` equals the
     unnormalised consensus ``c_t``, so the loss is evaluated as ``-c_t^T log q_t`` without
     ever dividing by ``Z_t``; at ``Z_t = 0`` it is exactly zero (Section 4.3).
+
+    ``num_views = K > 2`` pools all ``K`` teacher views into one joint target,
+    ``c_K = (prod_m p_m)^(1/K)`` with mass ``Z_K`` (supplementary experiment E08); the
+    arithmetic target is then the mean of the ``K`` views. ``K = 2`` is the paper's setting.
     """
 
     target: str = "geometric"
     weight: str = "mass"
-    num_views: int = field(default=2, init=False)
+    num_views: int = 2
 
     def __post_init__(self) -> None:
         if self.target not in TARGETS:
             raise ValueError(f"unknown target {self.target!r}; choose from {TARGETS}")
         if self.weight not in WEIGHTS:
             raise ValueError(f"unknown weight {self.weight!r}; choose from {WEIGHTS}")
+        if self.num_views < 2:
+            raise ValueError("a consensus objective needs at least two teacher views")
 
     @property
     def weight_assignment(self) -> str | None:
@@ -117,21 +145,21 @@ class ConsensusObjective:
         return self.weight != "unit"
 
     def __call__(self, block: PositionBlock) -> BlockLoss:
-        log_p1, log_p2 = _detached_views(block, 2)
-        log_q = F.log_softmax(block.student_logits.float(), dim=-1)
+        views = _detached_views(block, self.num_views)
+        log_q = block.student_log_probs
 
         if self.target == "geometric" and self.weight == "mass":
-            c, mass = geometric_consensus(log_p1, log_p2)
-            return BlockLoss(loss=-(c * log_q).sum(-1), weight=mass)
+            c, mass = geometric_consensus(*views)
+            return BlockLoss(loss=-(c * log_q).sum(-1), weight=mass, mass=mass)
 
         if self.target == "geometric":
-            target, mass = normalized_consensus(log_p1, log_p2)
+            target, mass = normalized_consensus(*views)
         else:
-            mass = geometric_consensus(log_p1, log_p2)[1]
+            mass = geometric_consensus(*views)[1]
             if self.target == "arithmetic":
-                target = arithmetic_mean(log_p1, log_p2)
+                target = arithmetic_mean(*views)
             else:
-                target = (log_p1 if self.target == "view1" else log_p2).exp()
+                target = (views[0] if self.target == "view1" else views[1]).exp()
 
         if self.weight == "unit":
             weight = torch.ones_like(mass)
@@ -141,7 +169,7 @@ class ConsensusObjective:
             if block.assigned_weight is None:
                 raise ValueError(f"weight={self.weight!r} needs PositionBlock.assigned_weight")
             weight = block.assigned_weight.detach().float().to(mass.device)
-        return BlockLoss(loss=-weight * (target * log_q).sum(-1), weight=weight)
+        return BlockLoss(loss=-weight * (target * log_q).sum(-1), weight=weight, mass=mass)
 
 
 def assign_weights(mass: Tensor, mode: str, generator: torch.Generator | None = None) -> Tensor:
@@ -171,8 +199,7 @@ class ForwardKL:
 
     def __call__(self, block: PositionBlock) -> BlockLoss:
         log_p = _detached_views(block, self.view + 1)[self.view]
-        log_q = F.log_softmax(block.student_logits.float(), dim=-1)
-        loss = kl_divergence(log_p, log_q)
+        loss = kl_divergence(log_p, block.student_log_probs)
         return BlockLoss(loss=loss, weight=torch.ones_like(loss))
 
 
@@ -186,8 +213,7 @@ class ReverseKL:
 
     def __call__(self, block: PositionBlock) -> BlockLoss:
         (log_p,) = _detached_views(block, 1)
-        log_q = F.log_softmax(block.student_logits.float(), dim=-1)
-        loss = kl_divergence(log_q, log_p)
+        loss = kl_divergence(block.student_log_probs, log_p)
         return BlockLoss(loss=loss, weight=torch.ones_like(loss))
 
 
@@ -210,7 +236,7 @@ class GeneralizedJSD:
 
     def __call__(self, block: PositionBlock) -> BlockLoss:
         (log_p,) = _detached_views(block, 1)
-        log_q = F.log_softmax(block.student_logits.float(), dim=-1)
+        log_q = block.student_log_probs
         log_m = torch.logaddexp(log_p + math.log(self.beta), log_q + math.log1p(-self.beta))
         loss = self.beta * kl_divergence(log_p, log_m)
         loss = loss + (1.0 - self.beta) * kl_divergence(log_q, log_m)
@@ -241,8 +267,7 @@ class SampledTokenOPD:
 
     def __call__(self, block: PositionBlock) -> BlockLoss:
         log_p = _detached_views(block, self.view + 1)[self.view]
-        log_q = F.log_softmax(block.student_logits.float(), dim=-1)
-        loss = sampled_token_opd_loss(log_p, log_q, block.tokens)
+        loss = sampled_token_opd_loss(log_p, block.student_log_probs, block.tokens)
         return BlockLoss(loss=loss, weight=torch.ones_like(loss))
 
 
@@ -285,7 +310,7 @@ class EOPD:
 
     def __call__(self, block: PositionBlock) -> BlockLoss:
         log_p = _detached_views(block, self.view + 1)[self.view]
-        log_q = F.log_softmax(block.student_logits.float(), dim=-1)
+        log_q = block.student_log_probs
         gate = (entropy(log_p) > self.entropy_threshold).float()
         fkl = truncated_forward_kl(log_p, log_q, self.top_k, self.renormalize_top_k)
         loss = sampled_token_opd_loss(log_p, log_q, block.tokens) + self.fkl_weight * gate * fkl
@@ -298,7 +323,9 @@ class TwoViewAverage:
 
     ``L_2V = 0.5 [L(p^(1), q) + L(p^(2), q)]``. With ``base = EOPD(top_k=None)`` this is
     EOPD-2V: the entropy gate is evaluated separately for each view and both terms use the
-    same student predictions on the original prompt.
+    same student predictions on the original prompt (one log-softmax per block, shared
+    through :attr:`PositionBlock.student_log_probs`). It scores the same two teacher views
+    with the same number of updates as VD-OPD (Table 2; supplementary experiment E06).
     """
 
     base_factory: Callable[[int], Objective]
@@ -306,11 +333,13 @@ class TwoViewAverage:
     weight_assignment: str | None = field(default=None, init=False)
     uses_consensus_mass: bool = field(default=False, init=False)
 
+    def __post_init__(self) -> None:
+        self._terms = tuple(self.base_factory(view) for view in range(2))
+
     def __call__(self, block: PositionBlock) -> BlockLoss:
-        outputs = [self.base_factory(view)(block) for view in range(2)]
+        first, second = (term(block) for term in self._terms)
         return BlockLoss(
-            loss=0.5 * (outputs[0].loss + outputs[1].loss),
-            weight=0.5 * (outputs[0].weight + outputs[1].weight),
+            loss=0.5 * (first.loss + second.loss), weight=0.5 * (first.weight + second.weight)
         )
 
 
@@ -321,6 +350,7 @@ class ObjectiveConfig:
     name: str = "vdopd"
     target: str | None = None
     weight: str | None = None
+    num_views: int | None = None  # K teacher views of the consensus family (E08); None = 2
     eopd_entropy_threshold: float = 0.8
     eopd_fkl_weight: float = 1.0
     eopd_top_k: int | None = None
@@ -365,14 +395,29 @@ def available_objectives() -> list[str]:
 
 
 def build_objective(cfg: ObjectiveConfig) -> Objective:
-    """Instantiate the objective named by ``cfg.name``."""
+    """Instantiate the objective named by ``cfg.name``.
+
+    ``cfg.num_views`` sets the number of teacher views ``K`` of the consensus family
+    (supplementary experiment E08). For every other objective it must be unset or equal to
+    the number of views the objective scores, so that a mistyped setting cannot be ignored.
+    """
+    objective = _build(cfg)
+    if cfg.num_views is not None and objective.num_views != cfg.num_views:
+        raise ValueError(
+            f"objective {cfg.name!r} scores {objective.num_views} teacher view(s); "
+            f"num_views={cfg.num_views} is not supported for it"
+        )
+    return objective
+
+
+def _build(cfg: ObjectiveConfig) -> Objective:
     if cfg.name in _REGISTRY:
         return _REGISTRY[cfg.name](cfg)
-    if cfg.name in _CONSENSUS_PRESETS:
-        target, weight = _CONSENSUS_PRESETS[cfg.name]
-        return ConsensusObjective(target=cfg.target or target, weight=cfg.weight or weight)
-    if cfg.name == "consensus":
-        return ConsensusObjective(target=cfg.target or "geometric", weight=cfg.weight or "mass")
+    if cfg.name in _CONSENSUS_PRESETS or cfg.name == "consensus":
+        target, weight = _CONSENSUS_PRESETS.get(cfg.name, ("geometric", "mass"))
+        return ConsensusObjective(
+            target=cfg.target or target, weight=cfg.weight or weight, num_views=cfg.num_views or 2
+        )
     if cfg.name in UNSPECIFIED_BASELINES:
         raise NotImplementedError(
             f"objective {cfg.name!r} is a hook only: {UNSPECIFIED_BASELINES[cfg.name]}. The "

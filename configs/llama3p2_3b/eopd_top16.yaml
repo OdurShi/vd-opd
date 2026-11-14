@@ -1,0 +1,7 @@
+_base_: base.yaml
+name: llama3p2_3b-eopd_top16
+objective:
+  name: eopd_top16
+  eopd_top_k: 16
+train:
+  output_dir: runs/llama3p2_3b/eopd_top16/seed11

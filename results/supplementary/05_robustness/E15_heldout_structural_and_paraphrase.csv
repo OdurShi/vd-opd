@@ -1,0 +1,11 @@
+family,method,mean_view,worst_view,worst_template,answer_flips_pct,parse_failures_pct
+Structural,EOPD(full),30.5,26.5,27.8,33,1.3
+Structural,EOPD(2V),31.0,27.0,28.0,32,1.2
+Structural,EOPD(full)+StudentAug,31.3,27.5,28.3,28,1.2
+Structural,EOPD(2V)+StudentAug,31.9,28.3,29.1,26,1.1
+Structural,VD-OPD,32.6,29.1,30.0,25,1.1
+Paraphrase,EOPD(full),29.7,25.5,26.5,36,1.6
+Paraphrase,EOPD(2V),30.2,26.2,27.0,34,1.5
+Paraphrase,EOPD(full)+StudentAug,30.4,26.5,27.4,32,1.3
+Paraphrase,EOPD(2V)+StudentAug,31.1,27.3,28.0,29,1.3
+Paraphrase,VD-OPD,31.8,28.2,29.0,28,1.2

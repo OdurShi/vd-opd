@@ -1,0 +1,8 @@
+method,additional_setting,selected_tau,selected_alpha,original_macro_avg8,further_eval_macro_avg8_mean,further_eval_macro_avg8_sd
+EOPD(top-16),9 dev configurations,0.8,1.0,34.1,34.2,0.5
+EOPD(full),9 dev configurations,0.6,1.0,34.8,35.2,0.5
+EOPD(2V),9 dev configurations,0.8,1.2,35.3,35.5,0.5
+ToDi-OP,Rerun with published vocabulary-wise mixing,,,32.1,32.3,0.5
+TSD-KD,Rerun with JSD 0.9 / top-10,,,32.7,32.8,0.5
+Veto,Rerun with initial beta = 0.8 and linear decay,,,33.2,33.4,0.5
+VD-OPD,No additional coefficient search,,,36.7,36.7,0.62

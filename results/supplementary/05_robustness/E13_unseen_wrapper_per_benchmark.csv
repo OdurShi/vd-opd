@@ -1,0 +1,7 @@
+benchmark,eopd_full_mean_view,eopd_full_worst_view,eopd_2v_mean_view,eopd_2v_worst_view,eopd_full_studentaug_mean_view,eopd_full_studentaug_worst_view,eopd_2v_studentaug_mean_view,eopd_2v_studentaug_worst_view,vd_opd_mean_view,vd_opd_worst_view
+MATH500,63.6,59.4,63.7,60.0,63.7,60.3,63.9,60.4,64.0,60.4
+AMC23,41.4,37.0,41.5,37.8,41.5,38.1,41.6,38.1,41.7,38.5
+AIME24,12.9,10.6,13.1,9.4,13.1,9.7,13.7,10.2,13.9,11.5
+AIME25,9.1,6.3,9.4,5.7,9.4,6.0,10.0,6.5,10.2,7.6
+Minerva,32.6,27.5,32.7,29.0,32.7,29.3,33.0,29.5,33.1,29.1
+OlympiadBench,37.2,32.6,37.6,33.9,37.6,34.2,38.7,35.2,39.0,34.1

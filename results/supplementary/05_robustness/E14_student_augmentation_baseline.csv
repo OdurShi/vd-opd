@@ -1,0 +1,6 @@
+method,flops_1e18,canonical,prefix_mean_view,prefix_worst_view,structural_mean_view,structural_worst_view,paraphrase_mean_view,paraphrase_worst_view
+EOPD(full),4.7,34.8,32.8,28.9,30.5,26.5,29.7,25.5
+EOPD(2V),5.8,35.3,33.0,29.3,31.0,27.0,30.2,26.2
+EOPD(full)+StudentAug,4.8,35.0,33.0,29.6,31.3,27.5,30.4,26.5
+EOPD(2V)+StudentAug,5.9,35.7,33.5,30.0,31.9,28.3,31.1,27.3
+VD-OPD,5.8,36.7,33.7,30.2,32.6,29.1,31.8,28.2

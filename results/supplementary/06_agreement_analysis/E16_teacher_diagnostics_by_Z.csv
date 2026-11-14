@@ -1,0 +1,10 @@
+diagnostic,low_z_q1,high_z_q4
+States,243,251
+Continuation pairs,972,1004
+Mean Z,0.46,0.97
+Same top-1 next token (%),30,93
+Disagreement outside union of top-10 tokens (%),26,69
+"Both continuations correct (%, approx.)",12,47
+"Exactly one correct (%, approx.)",29,15
+"Same wrong final answer (%, approx.)",19,33
+"Different wrong answers (%, approx.)",40,5

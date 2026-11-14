@@ -1,0 +1,11 @@
+# VD-OPD with K = 4 teacher views, same number of updates as the default K = 2 run
+# (supplementary E08). The original prompt and all three wrappers of Table 5 form one joint
+# target c_4 = (p_1 p_2 p_3 p_4)^(1/4) with mass Z_4; every response costs four teacher
+# scoring passes.
+_base_: ../base_qwen3_1p7b.yaml
+name: vd-opd-k4
+objective:
+  name: vdopd
+  num_views: 4
+train:
+  output_dir: runs/qwen3_1p7b/vdopd_k4/seed11

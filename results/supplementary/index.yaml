@@ -1,0 +1,428 @@
+# Registry of the supplementary experiments (E01-E18).
+#
+# Each entry names the CSV file that holds the numbers and describes how its columns are
+# displayed. The numbers live only in the CSV files: edit a CSV, then run
+#   python scripts/render_supplementary.py
+# to refresh docs/supplementary_results.md, and `pytest tests/test_supplementary_results.py`
+# to re-check that the tables still agree with each other.
+#
+# Column kinds:
+#   col                 one CSV column, shown as written
+#   mean + sd           "mean ± sd"
+#   value + low + high  "value [low, high]"  (95% confidence interval)
+#   pair: [a, b]        "a / b"
+# Columns are right-aligned unless `align: left` is given.
+
+conventions: >-
+  Unless stated otherwise, the student is Qwen3-1.7B(-Base) and the teacher is Qwen3-8B.
+  Accuracy is in percent and gains are in percentage points. SD is across three training
+  seeds. 95% confidence intervals use a paired question bootstrap that keeps all eight
+  samples and the paired seeds of each question together; they measure question-sampling
+  uncertainty conditional on the evaluated training runs.
+
+groups:
+  - dir: 01_main_results
+    title: Main results
+    summary: Three-seed results for three students, complete Tables 6-8, teacher versus student.
+  - dir: 02_compute_controls
+    title: Compute and view-budget controls
+    summary: Controls matched in total FLOPs and in teacher views and updates (Table 2).
+  - dir: 03_ablations
+    title: Ablations
+    summary: Target and weight (Table 4), number of views, view-pair gradients, training view pool.
+  - dir: 04_baselines
+    title: Baseline tuning
+    summary: Additional tuning and reruns of the baselines.
+  - dir: 05_robustness
+    title: Prompt robustness
+    summary: Unseen wrappers, structural changes, paraphrases, student-side augmentation.
+  - dir: 06_agreement_analysis
+    title: Analysis of the cross-view agreement Z
+    summary: Teacher diagnostics, local update utility and a two-token example.
+
+experiments:
+  - id: E01
+    file: 01_main_results/E01_three_seed_per_benchmark.csv
+    title: Three-seed per-benchmark results with 95% CIs
+    extends: Tables 1, 6-8
+    question: Are the improvements reliable across seeds, models, and small benchmarks?
+    setup:
+      - "Three students: Qwen3-1.7B, Qwen3-4B, Llama-3.2-3B; EOPD(full) vs. VD-OPD."
+      - "Metric: Avg@8, mean ± SD over three training seeds."
+      - For AIME the 30 questions are the bootstrap sampling units; each question's eight
+        continuations are kept together.
+    columns:
+      - {header: Student, col: student, align: left}
+      - {header: Benchmark, col: benchmark, align: left}
+      - {header: "EOPD(full) Avg@8 (mean ± SD)", mean: eopd_full_avg8_mean, sd: eopd_full_avg8_sd}
+      - {header: "VD-OPD Avg@8 (mean ± SD)", mean: vd_opd_avg8_mean, sd: vd_opd_avg8_sd}
+      - {header: "VD gain [95% CI]", value: vd_gain, low: vd_gain_ci_low, high: vd_gain_ci_high}
+    findings:
+      - VD-OPD improves the mean score in all 18 model-benchmark comparisons.
+      - Gains on MATH500, Minerva and OlympiadBench have positive 95% CIs for all three students.
+      - The smaller AMC23 / AIME24 / AIME25 benchmarks have CIs spanning zero.
+
+  - id: E02
+    file: 01_main_results/E02_complete_table6_qwen3_1.7b.csv
+    title: "Complete Table 6: Qwen3-1.7B student, all methods (Avg@8 / Pass@8)"
+    extends: Table 6
+    question: "What do the blank cells in Tables 6-8 mean, and what are the complete results?"
+    setup:
+      - Completes the blank Pass@8 and baseline cells of the original table.
+      - "Each cell is Avg@8 / Pass@8 (%): Avg@8 from sampled correctness, Pass@8 from
+        question-level success."
+      - "Teacher: Qwen3-8B."
+    columns: &benchmark_columns
+      - {header: Method, col: method, align: left}
+      - {header: MATH500, pair: [math500_avg8, math500_pass8]}
+      - {header: AMC23, pair: [amc23_avg8, amc23_pass8]}
+      - {header: AIME24, pair: [aime24_avg8, aime24_pass8]}
+      - {header: AIME25, pair: [aime25_avg8, aime25_pass8]}
+      - {header: Minerva, pair: [minerva_avg8, minerva_pass8]}
+      - {header: OlympiadBench, pair: [olympiadbench_avg8, olympiadbench_pass8]}
+    findings:
+      - VD-OPD has the highest Avg@8 and Pass@8 among students on every benchmark.
+
+  - id: E03
+    file: 01_main_results/E03_complete_table7_qwen3_4b.csv
+    title: "Complete Table 7: Qwen3-4B student, all methods (Avg@8 / Pass@8)"
+    extends: Table 7
+    question: "What do the blank cells in Tables 6-8 mean, and what are the complete results?"
+    setup:
+      - Completes the blank Pass@8 and baseline cells of the original table.
+      - "Each cell is Avg@8 / Pass@8 (%): Avg@8 from sampled correctness, Pass@8 from
+        question-level success."
+      - "Teacher: Qwen3-8B (same teacher row as Table 6)."
+    columns: *benchmark_columns
+    findings:
+      - VD-OPD has the highest Avg@8 and Pass@8 among students on every benchmark; several
+        distilled 4B students exceed the 8B teacher (see E05).
+
+  - id: E04
+    file: 01_main_results/E04_complete_table8_llama3.2_3b.csv
+    title: "Complete Table 8: Llama-3.2-3B student, all methods (Avg@8 / Pass@8)"
+    extends: Table 8
+    question: "What do the blank cells in Tables 6-8 mean, and what are the complete results?"
+    setup:
+      - Completes the blank Pass@8 and baseline cells of the original table.
+      - "Each cell is Avg@8 / Pass@8 (%): Avg@8 from sampled correctness, Pass@8 from
+        question-level success."
+    columns: *benchmark_columns
+    findings:
+      - VD-OPD has the highest Avg@8 and Pass@8 among students on every benchmark.
+
+  - id: E05
+    file: 01_main_results/E05_teacher_vs_student_math500.csv
+    title: Teacher vs. Qwen3-4B students on MATH500 under one common protocol
+    extends: Table 7
+    question: How can the Qwen3-4B student outperform its teacher, and were they evaluated
+      identically?
+    setup:
+      - Same 500 MATH500 questions and same non-thinking serialization (empty thinking block,
+        role/assistant prefixes) for teacher and students.
+      - "Decoding: temperature 1.0, top-p 0.8, 8,192-token response limit; shared stopping
+        rules and mathematical-equivalence grader."
+      - Eight samples per question in each of three evaluations. Reproduces Table 7 under the
+        common protocol.
+    columns:
+      - {header: Model, col: model, align: left}
+      - {header: MATH500 Avg@8, col: math500_avg8}
+      - {header: MATH500 Pass@8, col: math500_pass8}
+    findings:
+      - A distilled student can outperform its teacher (cf. Born Again Neural Networks).
+      - EOPD(full) already exceeds the teacher by 1.5 points; VD-OPD adds a further 1.8 points.
+
+  - id: E06
+    file: 02_compute_controls/E06_compute_matched_controls.csv
+    title: Compute- and view-matched controls with SD and 95% CIs
+    extends: Table 2
+    question: Does VD-OPD still win when compute and teacher views/updates are matched?
+    setup:
+      - "VD-Budget: VD-OPD trained with the same total FLOPs as EOPD(full)."
+      - "EOPD(2V): EOPD with two teacher views, i.e. the same teacher access and update
+        budget as VD-OPD."
+    columns:
+      - {header: Comparison, col: comparison, align: left}
+      - {header: Budget matched, col: budget_matched, align: left}
+      - {header: Baseline FLOPs (1e18), col: baseline_flops_1e18}
+      - {header: VD FLOPs (1e18), col: vd_flops_1e18}
+      - {header: "Baseline Macro Avg@8 (mean ± SD)", mean: baseline_macro_avg8_mean, sd: baseline_macro_avg8_sd}
+      - {header: "VD Macro Avg@8 (mean ± SD)", mean: vd_macro_avg8_mean, sd: vd_macro_avg8_sd}
+      - {header: "VD gain [95% CI]", value: vd_gain, low: vd_gain_ci_low, high: vd_gain_ci_high}
+    findings:
+      - Both matched-budget comparisons have positive 95% CIs (+1.2 at equal FLOPs, +1.4 at
+        equal views/updates).
+
+  - id: E07
+    file: 03_ablations/E07_target_weight_factorial.csv
+    title: Target x weight factorial ablation with SD and 95% CIs
+    extends: Table 4
+    question: "What theoretically connects Z to the objective, is its weighting optimal, and are the gains over weight controls meaningful?"
+    setup:
+      - "Target: arithmetic mean vs. geometric consensus r = c/Z with c(a) = sqrt(p1(a) p2(a)),
+        Z = sum_a c(a)."
+      - "Weight: 1 (none), Z, shuffled Z, batch-mean Z, or state-specific Z (= VD-OPD)."
+      - "Theory: c is the generalized-KL barycenter (Eq. 6, App. D.2); the loss
+        l = -c^T log q gives grad_z l = Z(q - r) and ||grad_z l||_1 <= 2Z (Eq. 8, App. D.3)."
+      - The loss is averaged over the unweighted number of valid tokens, preserving this
+        attenuation.
+    columns:
+      - {header: Target, col: target, align: left}
+      - {header: Weight, col: weight, align: left}
+      - {header: "Macro Avg@8 (mean ± SD)", mean: macro_avg8_mean, sd: macro_avg8_sd}
+      - {header: "VD gain [95% CI]", value: vd_gain, low: vd_gain_ci_low, high: vd_gain_ci_high}
+    findings:
+      - Changing the target shape alone (arithmetic/1 -> geometric/1) adds 1.1 points.
+      - State-specific Z adds a further estimated 0.6 points; this increment and the shuffled /
+        batch-mean comparisons have CIs that include zero.
+      - Much of the improvement comes from the consensus target, with a smaller estimated
+        contribution from assigning Z per state.
+
+  - id: E08
+    file: 03_ablations/E08_number_of_views_K2_vs_K4.csv
+    title: "Two vs. four teacher views: accuracy and cost"
+    question: Why are two views sufficient?
+    setup:
+      - "K=2 (default): each response uses the original prompt plus one alternative sampled
+        uniformly from three wrappers; at fixed prefixes this estimates the average update
+        over the three possible pairs."
+      - "K=4: joint four-view target c4(a) = (prod_{m=1..4} p_m(a))^(1/4)."
+      - "'Same updates' keeps the number of updates; 'same FLOPs' matches the K=2 training
+        compute."
+    columns:
+      - {header: Views / budget, col: setting, align: left}
+      - {header: "Macro Avg@8 (mean ± SD)", mean: macro_avg8_mean, sd: macro_avg8_sd}
+      - {header: WorstView, col: worst_view}
+      - {header: FLOPs (1e18), col: flops_1e18}
+      - {header: GPU-h, col: gpu_hours}
+      - {header: "Gain over K=2 [95% CI]", value: gain_over_k2, low: gain_over_k2_ci_low, high: gain_over_k2_ci_high}
+    findings:
+      - With the same updates, K=4 gains 0.4 points at about 38% more FLOPs.
+      - Under equal FLOPs, K=2 scores higher. Both difference CIs span zero.
+      - Two views are an efficient default in the cost-accuracy trade-off.
+
+  - id: E09
+    file: 03_ablations/E09_pair_gradient_cosine.csv
+    title: Gradient agreement of the three possible view pairs
+    question: Why are two views sufficient?
+    setup:
+      - On the same fixed states, cosine similarity between each pair's gradient and the mean
+        gradient over the three pairs.
+    columns:
+      - {header: Original prompt paired with, col: paired_view, align: left}
+      - {header: Cosine to three-pair mean gradient, col: cosine_to_mean_gradient}
+    findings:
+      - All three pairs give similar gradient directions (cosine 0.90-0.93).
+
+  - id: E10
+    file: 03_ablations/E10_view_pool_sensitivity.csv
+    title: Sensitivity to the training view pool
+    question: How sensitive are the gains to random paraphrases, simple templates, and
+      lower-quality valid views?
+    setup:
+      - Changes the teacher views while EOPD(full) stays on the original prompt.
+      - EOPD(2V) and VD-OPD each use 5.8e18 training FLOPs; external paraphrase generation and
+        human validation costs are outside this budget.
+    columns:
+      - {header: Training view pool, col: view_pool, align: left}
+      - {header: Mean Z, col: mean_z}
+      - {header: EOPD(full), col: eopd_full}
+      - {header: "EOPD(2V) (mean ± SD)", mean: eopd_2v_mean, sd: eopd_2v_sd}
+      - {header: "VD-OPD (mean ± SD)", mean: vd_opd_mean, sd: vd_opd_sd}
+      - {header: "VD - 2V [95% CI]", value: vd_minus_2v, low: vd_minus_2v_ci_low, high: vd_minus_2v_ci_high}
+      - {header: WorstView 2V / VD, pair: [worst_view_eopd_2v, worst_view_vd_opd]}
+    findings:
+      - With valid random paraphrases, VD-OPD beats EOPD(2V) by 1.1 points (positive CI).
+      - With weaker views, VD-OPD matches EOPD(full) and gains 0.3 over EOPD(2V) (CI spans zero).
+      - Simple templates and verified paraphrases give the most useful supervision among the
+        tested pools.
+
+  - id: E11
+    file: 04_baselines/E11_baseline_tuning.csv
+    title: Additional baseline tuning and reruns
+    question: Which hyperparameters were tuned, and do the EOPD results reproduce its original
+      protocol?
+    setup:
+      - "Original comparisons: shared learning-rate search {1e-6, 3e-6, 1e-5}; method-specific
+        coefficients at stated defaults (App. B.3-B.4)."
+      - "Additional EOPD experiments: 3x3 grid over entropy threshold tau and forward-KL
+        coefficient alpha on the development split."
+      - EOPD is reimplemented under a shared MATH training split and a one-update-per-rollout
+        schedule. The original EOPD paper uses teacher top-16 truncation and multiple
+        minibatch updates; its 4B experiment uses DAPO.
+      - The nine extra dev trials per EOPD variant count toward model selection, separately
+        from the training FLOPs in Table 2.
+    columns:
+      - {header: Method, col: method, align: left}
+      - {header: Additional search / setting, col: additional_setting, align: left}
+      - {header: Selected tau, col: selected_tau}
+      - {header: Selected alpha, col: selected_alpha}
+      - {header: Original Macro Avg@8, col: original_macro_avg8}
+      - {header: "Further evaluation (mean ± SD)", mean: further_eval_macro_avg8_mean, sd: further_eval_macro_avg8_sd}
+    findings:
+      - After dev tuning, VD-OPD still leads EOPD(full) by 1.5 points and EOPD(2V) by 1.2
+        points (point estimates).
+
+  - id: E12
+    file: 05_robustness/E12_unseen_wrapper_macro.csv
+    title: Unseen-wrapper robustness, macro averages, with student-side augmentation baselines
+    extends: Table 10
+    question: Do the unseen-view results demonstrate stability, and how do other baselines
+      compare?
+    setup:
+      - "WorstView: minimum across views for each question, then averaged. WorstTemplate:
+        minimum of template-level mean accuracies."
+      - "StudentAug: the student trains on original and wrapped prompts sampled with equal
+        probability (see E14)."
+      - The VD-OPD drop is 3.05 points from the per-benchmark Table 10 entries vs. 3.0 from
+        the rounded macro means.
+    columns:
+      - {header: Method, col: method, align: left}
+      - {header: Canonical, col: canonical}
+      - {header: MeanView, col: mean_view}
+      - {header: WorstView, col: worst_view}
+      - {header: WorstTemplate, col: worst_template}
+      - {header: Canonical - Mean, col: canonical_minus_mean}
+      - {header: Mean - Worst, col: mean_minus_worst}
+      - {header: Greedy answer flips (%), col: greedy_answer_flips_pct}
+    findings:
+      - VD-OPD has higher unseen-view accuracy but also a larger canonical-to-unseen drop.
+      - StudentAug is competitive on sensitivity; VD-OPD has the highest macro MeanView,
+        WorstView and WorstTemplate.
+
+  - id: E13
+    file: 05_robustness/E13_unseen_wrapper_per_benchmark.csv
+    title: Unseen-wrapper robustness per benchmark (MeanView / WorstView)
+    question: Do the unseen-view results demonstrate stability, and how do other baselines
+      compare?
+    setup:
+      - "Each cell: MeanView / WorstView (%) on unseen prompt wrappers."
+    columns:
+      - {header: Benchmark, col: benchmark, align: left}
+      - {header: EOPD(full), pair: [eopd_full_mean_view, eopd_full_worst_view]}
+      - {header: EOPD(2V), pair: [eopd_2v_mean_view, eopd_2v_worst_view]}
+      - {header: Full+StudentAug, pair: [eopd_full_studentaug_mean_view, eopd_full_studentaug_worst_view]}
+      - {header: 2V+StudentAug, pair: [eopd_2v_studentaug_mean_view, eopd_2v_studentaug_worst_view]}
+      - {header: VD-OPD, pair: [vd_opd_mean_view, vd_opd_worst_view]}
+    findings:
+      - VD-OPD has the highest MeanView on every benchmark and the highest WorstView on MATH500
+        (tied), AMC23, AIME24 and AIME25; the StudentAug baselines have a higher WorstView on
+        Minerva and OlympiadBench.
+
+  - id: E14
+    file: 05_robustness/E14_student_augmentation_baseline.csv
+    title: Student-side prompt augmentation (StudentAug) across held-out view families
+    question: What happens when the student trains on randomly wrapped prompts?
+    setup:
+      - StudentAug samples original and wrapped training prompts with equal probability, for
+        both student rollout and loss evaluation.
+      - One-view baseline (EOPD(full)+StudentAug) uses one teacher-scoring view; two-view
+        baseline (EOPD(2V)+StudentAug) scores both teacher views.
+      - All held-out views are fixed before model evaluation. Each family cell is
+        MeanView / WorstView.
+    columns:
+      - {header: Method, col: method, align: left}
+      - {header: FLOPs (1e18), col: flops_1e18}
+      - {header: Canonical, col: canonical}
+      - {header: Prefix Mean / Worst, pair: [prefix_mean_view, prefix_worst_view]}
+      - {header: Structural Mean / Worst, pair: [structural_mean_view, structural_worst_view]}
+      - {header: Paraphrase Mean / Worst, pair: [paraphrase_mean_view, paraphrase_worst_view]}
+    findings:
+      - Augmentation improves the baselines.
+      - VD-OPD gains a further 0.7 points MeanView on both structural changes and paraphrases
+        over 2V+StudentAug, with slightly fewer training FLOPs.
+      - VD-OPD's WorstView is the highest in all three families.
+
+  - id: E15
+    file: 05_robustness/E15_heldout_structural_and_paraphrase.csv
+    title: Held-out structural changes and verified paraphrases (detailed metrics)
+    question: Are the test transformations too similar to the training wrappers?
+    setup:
+      - "Structural changes: instruction relocation and layout/delimiter changes."
+      - "Verified paraphrases: preserve the question's conditions, variables, answer and roles."
+      - Each family has four views fixed before evaluation; training uses the original simple
+        wrappers.
+      - WorstView minimizes within each question; WorstTemplate minimizes template-level means.
+    columns:
+      - {header: Held-out family, col: family, align: left}
+      - {header: Method, col: method, align: left}
+      - {header: MeanView, col: mean_view}
+      - {header: WorstView, col: worst_view}
+      - {header: WorstTemplate, col: worst_template}
+      - {header: Answer flips (%), col: answer_flips_pct}
+      - {header: Parse failures (%), col: parse_failures_pct}
+    findings:
+      - VD-OPD has the highest MeanView, WorstView and WorstTemplate in both families,
+        including against student-side augmentation.
+
+  - id: E16
+    file: 06_agreement_analysis/E16_teacher_diagnostics_by_Z.csv
+    title: Teacher diagnostics and continuation outcomes by cross-view agreement Z
+    question: "Does low agreement reflect harmful supervision, or valid phrasing / reasoning diversity? Does agreement separate shared errors from different valid paths?"
+    setup:
+      - Middle checkpoint; 250 held-out questions x 4 student prefixes each; each prefix has
+        four paired teacher continuations.
+      - Low Z = bottom quartile (Q1), high Z = top quartile (Q4).
+      - "Tail statistic: share of total Hellinger disagreement outside the union of both
+        views' top-10 tokens."
+      - Outcome rows are approximate pair-level micro-averages ('both correct' includes
+        different valid reasoning paths; 'same wrong' requires equivalent incorrect final
+        answers). These are descriptive associations.
+    columns:
+      - {header: Diagnostic, col: diagnostic, align: left}
+      - {header: Low Z (Q1), col: low_z_q1}
+      - {header: High Z (Q4), col: high_z_q4}
+    findings:
+      - Low-Z states show substantial disagreement at dominant next-token predictions (same
+        top-1 only 30%).
+      - Some low-Z disagreement is valid reasoning diversity (about 12% of pairs are both
+        correct).
+      - High-Z states contain more shared wrong answers (about 33%), so agreement does not
+        guarantee correctness.
+
+  - id: E17
+    file: 06_agreement_analysis/E17_local_update_utility.csv
+    title: "Matched local updates: oracle KL, shared-error reinforcement, and correctness by Z stratum"
+    question: How do update utility and error propagation vary with Z?
+    setup:
+      - All branches start from the same middle checkpoint and optimizer state and share
+        student rollouts, teacher distributions and the number of effective update positions.
+      - 250 update questions and 250 measurement questions are source-disjoint. The geometric
+        variants share the same normalized target.
+      - "Oracle KL (nats) is measured against a fixed four-candidate answer target
+        (0.99, 0.01/3, 0.01/3, 0.01/3); positive = KL decreased."
+      - Shared-wrong probabilities use the same 67 low-Z and 119 high-Z eligible states across
+        methods; positive change = the shared wrong answer is reinforced.
+      - Results concern one middle checkpoint.
+    columns:
+      - {header: Z stratum, col: stratum, align: left}
+      - {header: Update, col: update, align: left}
+      - {header: "Oracle KL decrease [95% CI]", value: oracle_kl_decrease, low: oracle_kl_decrease_ci_low, high: oracle_kl_decrease_ci_high}
+      - {header: "Shared-wrong probability change [95% CI]", value: shared_wrong_prob_change, low: shared_wrong_prob_change_ci_low, high: shared_wrong_prob_change_ci_high}
+      - {header: "Correctness change, pp [95% CI]", value: correctness_change_pp, low: correctness_change_pp_ci_low, high: correctness_change_pp_ci_high}
+    findings:
+      - Among the five updates, VD-OPD has the largest low-Z point estimates for oracle-KL
+        improvement and continuation accuracy, and the only negative (weakening) shared-wrong
+        change; these low-Z CIs span zero.
+      - High-Z shared errors can still be reinforced by VD-OPD (+0.010), consistent with the
+        shared-bias analysis in App. D.9-D.10.
+      - Z controls supervision strength; answer outcomes assess correctness.
+
+  - id: E18
+    file: 06_agreement_analysis/E18_two_token_example.csv
+    title: "Two-token example: same normalized target, different consensus mass"
+    question: What distinguishes VD-OPD from adaptive supervision, teacher gating, and EOPD?
+    setup:
+      - "c(a) = sqrt(p1(a) p2(a)), Z = sum_a c(a), r = c / Z."
+      - "Related work contrasted: EOPD (single-view teacher entropy), ToDi (teacher-student
+        probability ratios), TGOPD (prompt-level verifier reliability), Veto (teacher-student
+        geometric target), logarithmic opinion pools (geometric pooling)."
+    columns:
+      - {header: Case, col: case, align: left}
+      - {header: Teacher view p1, col: p1, align: left}
+      - {header: Teacher view p2, col: p2, align: left}
+      - {header: Normalized consensus r, col: r, align: left}
+      - {header: Consensus mass Z, col: z}
+    findings:
+      - The same normalized target can come from shared uncertainty or contradictory
+        confidence; Z distinguishes the two and sets the supervision strength.
