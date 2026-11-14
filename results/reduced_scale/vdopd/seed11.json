@@ -1,0 +1,31 @@
+{
+  "benchmarks": {
+    "synthetic_arithmetic": {
+      "num_questions": 60,
+      "num_samples": 4,
+      "avg_at_k": 0.32083333333333336,
+      "pass_at_k": 0.6166666666666667,
+      "views": {
+        "original": 0.32083333333333336,
+        "unseen_instruction_1": 0.24166666666666667,
+        "unseen_instruction_2": 0.22083333333333333,
+        "unseen_layout_1": 0.2708333333333333,
+        "unseen_layout_2": 0.2625
+      },
+      "unseen": {
+        "mean_view": 0.24895833333333334,
+        "worst_view": 0.14166666666666666,
+        "worst_template": 0.22083333333333333
+      }
+    }
+  },
+  "macro": {
+    "avg_at_k": 0.32083333333333336,
+    "pass_at_k": 0.6166666666666667,
+    "mean_view": 0.24895833333333334,
+    "worst_view": 0.14166666666666666,
+    "worst_template": 0.22083333333333333
+  },
+  "student": "runs/reduced_scale/vdopd/seed11/final/student",
+  "seed": 11
+}

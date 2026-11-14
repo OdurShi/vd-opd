@@ -1,0 +1,7 @@
+# Table 4(a) Weighted arithmetic: target p_bar_t, weight Z_t.
+_base_: ../base_qwen3_1p7b.yaml
+name: ablation-weighted-arithmetic
+objective:
+  name: weighted_arithmetic
+train:
+  output_dir: runs/qwen3_1p7b/ablation_weighted_arithmetic/seed11

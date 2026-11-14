@@ -1,0 +1,14 @@
+# VD-OPD-Budget: VD-OPD with two teacher views, shortened to the total-FLOPs budget of the
+# default EOPD (full) run (Table 2, Appendix B.5.3).
+#
+# 4.7e18 is the paper's figure in the paper's own (unpublished) FLOPs accounting. This
+# repository estimates FLOPs analytically (vdopd/flops.py), so to reproduce the control you
+# should set the budget to the `flops_total` recorded at the end of your own EOPD (full) run:
+#   vdopd train --config configs/qwen3_1p7b/vdopd_budget.yaml --set train.max_total_flops=<value>
+_base_: ../base_qwen3_1p7b.yaml
+name: vd-opd-budget
+objective:
+  name: vdopd
+train:
+  max_total_flops: 4.7e18
+  output_dir: runs/qwen3_1p7b/vdopd_budget/seed11

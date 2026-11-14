@@ -1,0 +1,9 @@
+# EOPD-2V: single-view EOPD (full) objective averaged over two teacher views (Equation 13; Table 2).
+_base_: ../base_qwen3_1p7b.yaml
+name: eopd-2v
+objective:
+  name: eopd_2v
+  eopd_entropy_threshold: 0.8       # evaluated separately for each view
+  eopd_fkl_weight: 1.0
+train:
+  output_dir: runs/qwen3_1p7b/eopd_2v/seed11

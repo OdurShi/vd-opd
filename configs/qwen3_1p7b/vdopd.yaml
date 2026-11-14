@@ -1,0 +1,7 @@
+# VD-OPD (ours): unnormalised geometric consensus target, weight Z_t (Equation 7; Tables 1-4).
+_base_: ../base_qwen3_1p7b.yaml
+name: vd-opd
+objective:
+  name: vdopd
+train:
+  output_dir: runs/qwen3_1p7b/vdopd/seed11

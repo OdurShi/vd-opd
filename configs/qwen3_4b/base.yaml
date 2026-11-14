@@ -1,0 +1,5 @@
+# Qwen3-8B -> Qwen3-4B-Base (Table 7, Figure 4b); otherwise the common protocol.
+_base_: ../base_qwen3_1p7b.yaml
+name: qwen3-4b-base
+model:
+  student: Qwen/Qwen3-4B-Base

@@ -1,0 +1,6 @@
+_base_: base.yaml
+name: qwen3_4b-vdopd
+objective:
+  name: vdopd
+train:
+  output_dir: runs/qwen3_4b/vdopd/seed11

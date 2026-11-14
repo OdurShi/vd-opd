@@ -1,0 +1,6 @@
+_base_: base.yaml
+name: llama3p2_3b-eopd_full
+objective:
+  name: eopd_full
+train:
+  output_dir: runs/llama3p2_3b/eopd_full/seed11

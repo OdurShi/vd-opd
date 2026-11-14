@@ -1,0 +1,47 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+*.whl
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+
+# Environments
+.venv/
+venv/
+env/
+.env
+
+# Run outputs, datasets and checkpoints
+/runs/
+/results/*
+!/results/reduced_scale/
+/outputs/
+/checkpoints/
+/wandb/
+*.pt
+*.bin
+*.safetensors
+*.npz
+
+# Datasets fetched by scripts/download_data.py that are not distributed with the repository
+/data/benchmarks/amc23.jsonl
+/data/benchmarks/aime24.jsonl
+/data/benchmarks/minerva.jsonl
+/data/cache/
+
+# Figures produced by scripts (the paper figures in assets/ are tracked)
+*.png
+*.pdf
+!/assets/paper_figures/*.png
+
+# OS / editors
+.DS_Store
+.idea/
+.vscode/

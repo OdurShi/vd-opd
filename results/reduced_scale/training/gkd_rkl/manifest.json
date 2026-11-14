@@ -1,0 +1,134 @@
+{
+  "config": {
+    "name": "reduced-scale-gkd_rkl",
+    "model": {
+      "teacher": "HuggingFaceTB/SmolLM2-360M-Instruct",
+      "student": "HuggingFaceTB/SmolLM2-135M-Instruct",
+      "teacher_revision": null,
+      "student_revision": null,
+      "dtype": "float32",
+      "device": "auto",
+      "teacher_device": null,
+      "gradient_checkpointing": false,
+      "chat_template_kwargs": {},
+      "stop_tokens": [
+        "<|im_end|>"
+      ],
+      "teacher_context": null,
+      "student_context": null
+    },
+    "data": {
+      "source": "synthetic_arithmetic",
+      "split_seed": 42,
+      "num_diagnostic": 500,
+      "num_development": 500,
+      "remove_overlap_with": [
+        "math500",
+        "amc23",
+        "aime24",
+        "aime25",
+        "minerva",
+        "olympiadbench"
+      ],
+      "prompt_template": "{question}",
+      "system_prompt": "You are a calculator. Reply with only the result inside \\boxed{}.",
+      "exemplars": [
+        [
+          "What is 21+30?",
+          "\\boxed{51}"
+        ],
+        [
+          "What is 45-22?",
+          "\\boxed{23}"
+        ],
+        [
+          "What is 20-31?",
+          "\\boxed{-11}"
+        ]
+      ],
+      "limit": null,
+      "synthetic_max_operand": 19,
+      "synthetic_test_fraction": 0.2
+    },
+    "rollout": {
+      "batch_size": 32,
+      "max_response_tokens": 16,
+      "temperature": 1.0,
+      "top_p": 1.0,
+      "top_k": null,
+      "generation_batch_size": 32
+    },
+    "objective": {
+      "name": "gkd_rkl",
+      "target": null,
+      "weight": null,
+      "eopd_entropy_threshold": 0.8,
+      "eopd_fkl_weight": 1.0,
+      "eopd_top_k": null,
+      "eopd_renormalize_top_k": false,
+      "jsd_beta": 0.9
+    },
+    "optim": {
+      "learning_rate": 1e-05,
+      "beta1": 0.9,
+      "beta2": 0.95,
+      "eps": 1e-08,
+      "weight_decay": 0.0,
+      "max_grad_norm": 1.0,
+      "warmup_fraction": 0.03,
+      "min_lr_ratio": 0.0
+    },
+    "train": {
+      "seed": 11,
+      "passes": 1.5,
+      "iterations": null,
+      "microbatch_size": 16,
+      "position_block_size": 32,
+      "max_total_flops": null,
+      "max_teacher_flops": null,
+      "gradient_checkpointing": false,
+      "log_diagnostics": true,
+      "log_every": 1,
+      "checkpoint_every": 0,
+      "output_dir": "runs/reduced_scale/gkd_rkl/seed11",
+      "teacher_cache_device": null
+    },
+    "evaluation": {
+      "benchmarks": [
+        "synthetic_arithmetic"
+      ],
+      "limit": 60,
+      "unseen_wrappers": true,
+      "seen_wrappers": false,
+      "decoding": {
+        "num_samples": 4,
+        "temperature": 1.0,
+        "top_p": 0.8,
+        "max_response_tokens": 16,
+        "batch_size": 64,
+        "seed": 11,
+        "rel_tol": 1e-09,
+        "prompt_template": "{question}\n\nPlease reason step by step, and put your final answer within \\boxed{{}}.",
+        "system_prompt": null,
+        "exemplars": []
+      }
+    }
+  },
+  "versions": {
+    "vdopd": "0.1.0",
+    "torch": "2.15.0",
+    "transformers": "5.23.0",
+    "python": "3.11.18"
+  },
+  "train_wrappers": [
+    "Solve the following problem.",
+    "Find a solution to the problem below.",
+    "Problem:"
+  ],
+  "eval_wrappers": [
+    "Please solve this problem.",
+    "Determine the answer to the following problem.",
+    "Problem statement:",
+    "Question:"
+  ]
+}

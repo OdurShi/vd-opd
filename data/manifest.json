@@ -1,0 +1,126 @@
+{
+  "files": {
+    "benchmarks/aime24.jsonl": {
+      "file": "benchmarks/aime24.jsonl",
+      "source": "HuggingFaceH4/aime_2024",
+      "config": "default",
+      "split": "train",
+      "revision": "2fe88a2f1091d5048c0f36abc874fb997b3dd99a",
+      "license": "none stated on the dataset card",
+      "shipped": false,
+      "num_examples": 30,
+      "sha256": "3b791bec81242339a0b5b2d881805e6a1c75df58d5f84278127607285cc19dae"
+    },
+    "benchmarks/aime25.jsonl": {
+      "file": "benchmarks/aime25.jsonl",
+      "source": "math-ai/aime25",
+      "config": "default",
+      "split": "test",
+      "revision": "563bb8404243c5f09de6ec262f2db674fe5bce9b",
+      "license": "Apache-2.0",
+      "shipped": true,
+      "num_examples": 30,
+      "sha256": "c19e99ec39a417daed2ffbd5710819bc6d4cca775929268e47a96cdcff5c68ea"
+    },
+    "benchmarks/amc23.jsonl": {
+      "file": "benchmarks/amc23.jsonl",
+      "source": "math-ai/amc23",
+      "config": "default",
+      "split": "test",
+      "revision": "80815d37005feb82cd7f8fbc6901d5d3eff43057",
+      "license": "none stated on the dataset card",
+      "shipped": false,
+      "num_examples": 40,
+      "sha256": "bc4407852feca67f6e76175d9acb487caba92aeb491689fb0475e0cc1570eac9"
+    },
+    "benchmarks/gsm8k.jsonl": {
+      "file": "benchmarks/gsm8k.jsonl",
+      "source": "openai/gsm8k",
+      "config": "main",
+      "split": "test",
+      "revision": "740312add88f781978c0658806c59bc2815b9866",
+      "license": "MIT",
+      "shipped": true,
+      "num_examples": 1319,
+      "sha256": "752adc99f23132275139f1f7be57126b08735a55daf0c56859ee6df70abafbac"
+    },
+    "benchmarks/math500.jsonl": {
+      "file": "benchmarks/math500.jsonl",
+      "source": "HuggingFaceH4/MATH-500",
+      "config": "default",
+      "split": "test",
+      "revision": "6e4ed1a2a79af7d8630a6b768ec859cb5af4d3be",
+      "license": "MIT (subset of the MATH test split)",
+      "shipped": true,
+      "num_examples": 500,
+      "sha256": "35dc41080a3680858b27fa7e0533d2d547825316fc5dafe5d316f4ccc5a06132"
+    },
+    "benchmarks/minerva.jsonl": {
+      "file": "benchmarks/minerva.jsonl",
+      "source": "math-ai/minervamath",
+      "config": "default",
+      "split": "test",
+      "revision": "ee46ddc498933b1977577953250ca5c66be64f96",
+      "license": "none stated on the dataset card",
+      "shipped": false,
+      "num_examples": 272,
+      "sha256": "e04ec2bc1d8f80a0091b4b1989f1ffb366f3583f5bae381546a066d4ccc26e3d"
+    },
+    "benchmarks/olympiadbench.jsonl": {
+      "file": "benchmarks/olympiadbench.jsonl",
+      "source": "Hothan/OlympiadBench",
+      "config": "OE_TO_maths_en_COMP",
+      "split": "train",
+      "revision": "91184b52131e7fc9455fef848035173aea8cc01a",
+      "license": "Apache-2.0 (dataset card), MIT (upstream repository)",
+      "shipped": true,
+      "num_examples": 674,
+      "sha256": "d5f737f0ed8dd9d1974002d9f1ab9fce7cfa6eb254e36abb7afc9cef14a67bcd"
+    },
+    "math_train/splits/deduplicated.txt": {
+      "derived_from": "math_train/train.jsonl",
+      "sha256": "70463a98357698f5c32f373bf0c7b14adb506fc13aa2c0d4d9c8798a705ad5bb",
+      "num_examples": 7499
+    },
+    "math_train/splits/development.txt": {
+      "derived_from": "math_train/train.jsonl",
+      "sha256": "8a273030de4194e749d6dd6254837e8083e70c600f7a92ecce237f81c4c312ab",
+      "num_examples": 500
+    },
+    "math_train/splits/diagnostic.txt": {
+      "derived_from": "math_train/train.jsonl",
+      "sha256": "8cc7eda9aaa0f26b4e88d2807b4e70c70950f280b77f1f3a1de3463474bbc13a",
+      "num_examples": 500
+    },
+    "math_train/splits/diagnostic_measurement.txt": {
+      "derived_from": "math_train/train.jsonl",
+      "sha256": "b6a5abc659c2f8abf9ec2fb95ebf46400efbacc8a01130ab250b44309a2ebda1",
+      "num_examples": 250
+    },
+    "math_train/splits/diagnostic_update.txt": {
+      "derived_from": "math_train/train.jsonl",
+      "sha256": "5980f66825b4cd8f33430a19034a8773f87072f47ae1ce180edf8f282ae5ae38",
+      "num_examples": 250
+    },
+    "math_train/splits/optimization.txt": {
+      "derived_from": "math_train/train.jsonl",
+      "sha256": "81b2be4e146237e4960cdf34748d7cf4165909aec8e4548d502cfd05c2ac69e8",
+      "num_examples": 6499
+    },
+    "math_train/splits/split_info.json": {
+      "derived_from": "math_train/train.jsonl",
+      "sha256": "2ab54b094ba70c7631f9409697789bfa97e3464894d9cf467963a4aeeca524dc"
+    },
+    "math_train/train.jsonl": {
+      "file": "math_train/train.jsonl",
+      "source": "EleutherAI/hendrycks_math",
+      "config": "algebra, counting_and_probability, geometry, intermediate_algebra, number_theory, prealgebra, precalculus",
+      "split": "train",
+      "revision": "21a5633873b6a120296cce3e2df9d5550074f4a3",
+      "license": "MIT",
+      "shipped": true,
+      "num_examples": 7500,
+      "sha256": "7a08cf61a5843ccbb9c1be1bc43642b3dc38242e01f10a513a0bff9b746f1f61"
+    }
+  }
+}

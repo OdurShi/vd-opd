@@ -1,0 +1,13 @@
+# Llama-3.1-8B-Instruct -> Llama-3.2-3B-Instruct (Table 8, Figure 4c). The pair uses one
+# shared instruction-chat serialisation (the teacher's template). Both models are gated on
+# the Hugging Face Hub.
+_base_: ../base_qwen3_1p7b.yaml
+name: llama-3.2-3b-instruct
+model:
+  teacher: meta-llama/Llama-3.1-8B-Instruct
+  student: meta-llama/Llama-3.2-3B-Instruct
+  # The Llama 3.1 template inserts the current date unless one is given; fixing it keeps the
+  # serialisation identical across runs (our choice; the paper does not state the string).
+  chat_template_kwargs:
+    date_string: "26 Jul 2024"
+  stop_tokens: ["<|eot_id|>"]

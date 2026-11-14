@@ -1,0 +1,7 @@
+# Table 4(a) Geometric: target r_t = c_t / Z_t, weight 1.
+_base_: ../base_qwen3_1p7b.yaml
+name: ablation-geometric
+objective:
+  name: geometric
+train:
+  output_dir: runs/qwen3_1p7b/ablation_geometric/seed11

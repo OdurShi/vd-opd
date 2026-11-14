@@ -1,0 +1,7 @@
+# Sampled-token OPD (Table 1).
+_base_: ../base_qwen3_1p7b.yaml
+name: sampled-token-opd
+objective:
+  name: sampled_opd
+train:
+  output_dir: runs/qwen3_1p7b/sampled_opd/seed11

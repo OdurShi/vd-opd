@@ -1,0 +1,56 @@
+# Reduced-scale sanity run on a laptop (Apple MPS or CPU). NOT the paper's setting:
+# small public models, a synthetic arithmetic task, a short response cap, one seed and a
+# larger learning rate. It exists to exercise the real-model code path end to end.
+name: reduced-scale
+
+model:
+  teacher: HuggingFaceTB/SmolLM2-360M-Instruct
+  student: HuggingFaceTB/SmolLM2-135M-Instruct
+  dtype: float32
+  device: auto
+  gradient_checkpointing: false
+  chat_template_kwargs: {}
+  stop_tokens: ["<|im_end|>"]
+
+data:
+  source: synthetic_arithmetic       # a+b and a-b for operands 0..19, 80/20 split
+  split_seed: 42
+  synthetic_max_operand: 19
+  prompt_template: "{question}"
+  system_prompt: "You are a calculator. Reply with only the result inside \\boxed{}."
+  # Three fixed exemplar turns (operands outside the task's 0..19 range) teach the tiny
+  # models the answer format; they are earlier dialogue turns, identical across views.
+  exemplars:
+    - ["What is 21+30?", "\\boxed{51}"]
+    - ["What is 45-22?", "\\boxed{23}"]
+    - ["What is 20-31?", "\\boxed{-11}"]
+
+rollout:
+  batch_size: 32
+  max_response_tokens: 16
+  temperature: 1.0
+  top_p: 1.0
+  generation_batch_size: 32
+
+optim:
+  learning_rate: 1.0e-5              # upper end of the paper's search grid
+
+train:
+  seed: 11
+  passes: 1.5                        # 640 prompts * 1.5 / 32 = 30 rollout batches
+  microbatch_size: 16
+  position_block_size: 32
+  checkpoint_every: 0
+  output_dir: runs/reduced_scale/unnamed/seed11
+
+evaluation:
+  benchmarks: [synthetic_arithmetic]  # held-out problems of the 80/20 split
+  limit: 60                          # first 60 of the 160 held-out problems
+  unseen_wrappers: true
+  decoding:
+    num_samples: 4                   # Avg@4 instead of Avg@8
+    temperature: 1.0
+    top_p: 0.8
+    max_response_tokens: 16
+    batch_size: 64
+    seed: 11

@@ -1,0 +1,21 @@
+{
+  "seed": 42,
+  "num_diagnostic": 500,
+  "num_development": 500,
+  "overlap_benchmarks": [
+    "aime24",
+    "aime25",
+    "amc23",
+    "math500",
+    "minerva",
+    "olympiadbench"
+  ],
+  "sizes": {
+    "deduplicated": 7499,
+    "optimization": 6499,
+    "development": 500,
+    "diagnostic": 500,
+    "diagnostic_update": 250,
+    "diagnostic_measurement": 250
+  }
+}

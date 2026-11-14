@@ -1,0 +1,8 @@
+# GKD-JSD: generalised JSD with parameter 0.9 (Table 1).
+_base_: ../base_qwen3_1p7b.yaml
+name: gkd-jsd
+objective:
+  name: gkd_jsd
+  jsd_beta: 0.9
+train:
+  output_dir: runs/qwen3_1p7b/gkd_jsd/seed11

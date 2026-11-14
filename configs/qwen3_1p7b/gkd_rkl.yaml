@@ -1,0 +1,7 @@
+# GKD-RKL (full): full-vocabulary reverse KL (Table 1).
+_base_: ../base_qwen3_1p7b.yaml
+name: gkd-rkl-full
+objective:
+  name: gkd_rkl
+train:
+  output_dir: runs/qwen3_1p7b/gkd_rkl/seed11

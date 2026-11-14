@@ -1,0 +1,66 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "vdopd"
+version = "0.1.0"
+description = "View-Decomposed On-Policy Distillation (VD-OPD): consensus supervision from two teacher prompt views"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [{ name = "The VD-OPD authors" }]
+keywords = ["knowledge distillation", "on-policy distillation", "large language models", "prompt robustness"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "License :: OSI Approved :: MIT License",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+dependencies = [
+    "torch>=2.4",
+    "transformers>=5.0",
+    "numpy>=1.24",
+    "pyyaml>=6.0",
+    "sympy>=1.12",
+]
+
+[project.optional-dependencies]
+# Dataset loaders for the MATH training split and the evaluation benchmarks.
+data = ["datasets>=2.18"]
+# Multi-device placement of large teachers (device_map="auto").
+accel = ["accelerate>=0.30"]
+# Figure scripts.
+plots = ["matplotlib>=3.8"]
+# scripts/extract_paper_figures.py
+figures = ["pymupdf>=1.24"]
+dev = ["pytest>=8.0", "ruff>=0.6"]
+all = ["datasets>=2.18", "accelerate>=0.30", "matplotlib>=3.8"]
+
+[project.scripts]
+vdopd = "vdopd.cli:main"
+
+[project.urls]
+Repository = "https://github.com/OdurShi/vd-opd"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+filterwarnings = ["ignore::DeprecationWarning", "ignore::FutureWarning"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+src = ["src", "tests", "scripts", "examples"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "W"]
+ignore = ["B008"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["vdopd"]

@@ -1,0 +1,6 @@
+_base_: base.yaml
+name: reduced-scale-gkd_rkl
+objective:
+  name: gkd_rkl
+train:
+  output_dir: runs/reduced_scale/gkd_rkl/seed11

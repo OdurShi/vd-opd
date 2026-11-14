@@ -1,0 +1,7 @@
+# Table 4(a) Arithmetic: target p_bar_t, weight 1.
+_base_: ../base_qwen3_1p7b.yaml
+name: ablation-arithmetic
+objective:
+  name: arithmetic
+train:
+  output_dir: runs/qwen3_1p7b/ablation_arithmetic/seed11

@@ -1,0 +1,7 @@
+# GKD-FKL: forward KL on student-generated trajectories (Table 1).
+_base_: ../base_qwen3_1p7b.yaml
+name: gkd-fkl
+objective:
+  name: gkd_fkl
+train:
+  output_dir: runs/qwen3_1p7b/gkd_fkl/seed11

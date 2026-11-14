@@ -1,0 +1,7 @@
+# Table 4(b) Shuffled weight: target r_t, weight Z_pi(t) for a seeded permutation pi.
+_base_: ../base_qwen3_1p7b.yaml
+name: ablation-shuffled-weight
+objective:
+  name: shuffled_weight
+train:
+  output_dir: runs/qwen3_1p7b/ablation_shuffled_weight/seed11

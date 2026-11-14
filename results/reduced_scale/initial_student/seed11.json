@@ -1,0 +1,31 @@
+{
+  "benchmarks": {
+    "synthetic_arithmetic": {
+      "num_questions": 60,
+      "num_samples": 4,
+      "avg_at_k": 0.0375,
+      "pass_at_k": 0.1,
+      "views": {
+        "original": 0.0375,
+        "unseen_instruction_1": 0.0375,
+        "unseen_instruction_2": 0.07083333333333333,
+        "unseen_layout_1": 0.04583333333333333,
+        "unseen_layout_2": 0.041666666666666664
+      },
+      "unseen": {
+        "mean_view": 0.04895833333333333,
+        "worst_view": 0.008333333333333333,
+        "worst_template": 0.0375
+      }
+    }
+  },
+  "macro": {
+    "avg_at_k": 0.0375,
+    "pass_at_k": 0.1,
+    "mean_view": 0.04895833333333333,
+    "worst_view": 0.008333333333333333,
+    "worst_template": 0.0375
+  },
+  "student": "HuggingFaceTB/SmolLM2-135M-Instruct",
+  "seed": 11
+}

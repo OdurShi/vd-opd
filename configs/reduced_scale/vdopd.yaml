@@ -1,0 +1,6 @@
+_base_: base.yaml
+name: reduced-scale-vdopd
+objective:
+  name: vdopd
+train:
+  output_dir: runs/reduced_scale/vdopd/seed11

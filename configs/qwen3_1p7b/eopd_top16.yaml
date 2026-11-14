@@ -1,0 +1,10 @@
+# EOPD (top-16): entropy-gated forward KL on the teacher's top-16 tokens (Table 1).
+_base_: ../base_qwen3_1p7b.yaml
+name: eopd-top16
+objective:
+  name: eopd_top16
+  eopd_entropy_threshold: 0.8
+  eopd_fkl_weight: 1.0
+  eopd_top_k: 16
+train:
+  output_dir: runs/qwen3_1p7b/eopd_top16/seed11

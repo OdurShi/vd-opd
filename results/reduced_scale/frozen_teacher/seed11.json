@@ -1,0 +1,31 @@
+{
+  "benchmarks": {
+    "synthetic_arithmetic": {
+      "num_questions": 60,
+      "num_samples": 4,
+      "avg_at_k": 0.5125,
+      "pass_at_k": 0.7833333333333333,
+      "views": {
+        "original": 0.5125,
+        "unseen_instruction_1": 0.6041666666666666,
+        "unseen_instruction_2": 0.5916666666666667,
+        "unseen_layout_1": 0.49583333333333335,
+        "unseen_layout_2": 0.5291666666666667
+      },
+      "unseen": {
+        "mean_view": 0.5552083333333333,
+        "worst_view": 0.42916666666666664,
+        "worst_template": 0.49583333333333335
+      }
+    }
+  },
+  "macro": {
+    "avg_at_k": 0.5125,
+    "pass_at_k": 0.7833333333333333,
+    "mean_view": 0.5552083333333333,
+    "worst_view": 0.42916666666666664,
+    "worst_template": 0.49583333333333335
+  },
+  "student": "HuggingFaceTB/SmolLM2-360M-Instruct",
+  "seed": 11
+}

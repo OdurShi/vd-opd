@@ -1,0 +1,9 @@
+# EOPD (full): sampled-token OPD + entropy-gated full-vocabulary forward KL (Tables 1-3).
+_base_: ../base_qwen3_1p7b.yaml
+name: eopd-full
+objective:
+  name: eopd_full
+  eopd_entropy_threshold: 0.8       # nats
+  eopd_fkl_weight: 1.0
+train:
+  output_dir: runs/qwen3_1p7b/eopd_full/seed11

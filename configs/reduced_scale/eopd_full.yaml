@@ -1,0 +1,6 @@
+_base_: base.yaml
+name: reduced-scale-eopd_full
+objective:
+  name: eopd_full
+train:
+  output_dir: runs/reduced_scale/eopd_full/seed11

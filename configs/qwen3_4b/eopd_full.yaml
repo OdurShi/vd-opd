@@ -1,0 +1,6 @@
+_base_: base.yaml
+name: qwen3_4b-eopd_full
+objective:
+  name: eopd_full
+train:
+  output_dir: runs/qwen3_4b/eopd_full/seed11
