@@ -161,6 +161,7 @@ Data: [`01_main_results/E03_complete_table7_qwen3_4b.csv`](../results/supplement
 
 - Completes the blank Pass@8 and baseline cells of the original table.
 - Each cell is Avg@8 / Pass@8 (%): Avg@8 from sampled correctness, Pass@8 from question-level success.
+- Teacher: Llama-3.1-8B-Instruct, as in Table 8.
 
 | Method | MATH500 | AMC23 | AIME24 | AIME25 | Minerva | OlympiadBench |
 |---|---:|---:|---:|---:|---:|---:|

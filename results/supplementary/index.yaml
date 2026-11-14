@@ -107,6 +107,7 @@ experiments:
       - Completes the blank Pass@8 and baseline cells of the original table.
       - "Each cell is Avg@8 / Pass@8 (%): Avg@8 from sampled correctness, Pass@8 from
         question-level success."
+      - "Teacher: Llama-3.1-8B-Instruct, as in Table 8."
     columns: *benchmark_columns
     findings:
       - VD-OPD has the highest Avg@8 and Pass@8 among students on every benchmark.
