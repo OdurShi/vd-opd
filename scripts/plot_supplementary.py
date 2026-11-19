@@ -72,9 +72,7 @@ def _frame(ax, value_axis: str = "x") -> None:
 
 def _dot(ax, x, y, color, size: float = 7.0, **kwargs) -> None:
     """A filled marker with a ring in the surface colour."""
-    ax.plot(
-        x, y, "o", ms=size, mfc=color, mec=SURFACE, mew=1.2, zorder=3, clip_on=False, **kwargs
-    )
+    ax.plot(x, y, "o", ms=size, mfc=color, mec=SURFACE, mew=1.2, zorder=3, clip_on=False, **kwargs)
 
 
 def _titles(fig, title: str, subtitle: str) -> None:

@@ -39,12 +39,12 @@ means "not applicable" (for example the gain of the reference row).
 ```python
 from vdopd.supplementary import load, load_index
 
-table = load("E07")                      # one experiment
+table = load("E07")  # one experiment
 print(table.to_markdown())
 row = table.row(weight="state-specific Z")
 print(table.number(row, "macro_avg8_mean"))
 
-for experiment in load_index():          # all of them
+for experiment in load_index():  # all of them
     print(experiment.id, experiment.title, len(experiment.rows))
 ```
 

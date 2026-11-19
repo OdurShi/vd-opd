@@ -1,17 +1,73 @@
-# VD-OPD: View-Decomposed On-Policy Distillation
+<h1 align="center">VD-OPD</h1>
 
-Official implementation of "View-Decomposed On-Policy Distillation for Robust Reasoning in
-Large Language Models": on-policy distillation in which a frozen teacher is queried under two
-task-preserving prompt views at the same student-generated prefix, and the shared probability
-mass of the two views defines both the target and its weight.
+<p align="center">
+  <b>View-Decomposed On-Policy Distillation for Robust Reasoning in Large Language Models</b><br>
+  Official implementation
+</p>
 
-[![Paper](https://img.shields.io/badge/paper-under%20review-lightgrey.svg)](#citation)
-[![Python](https://img.shields.io/badge/python-3.10%20%7C%203.11%20%7C%203.12-blue.svg)](pyproject.toml)
-[![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
-[![CI](https://github.com/OdurShi/vd-opd/actions/workflows/ci.yml/badge.svg)](https://github.com/OdurShi/vd-opd/actions/workflows/ci.yml)
-[![Code style: ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
+<p align="center">
+  <a href="#citation"><img src="https://img.shields.io/badge/paper-under%20review-lightgrey.svg" alt="Paper: under review"></a>
+  <a href="pyproject.toml"><img src="https://img.shields.io/badge/python-3.10%20%7C%203.11%20%7C%203.12-blue.svg" alt="Python 3.10 | 3.11 | 3.12"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-green.svg" alt="License: MIT"></a>
+  <a href="https://github.com/OdurShi/vd-opd/actions/workflows/ci.yml"><img src="https://github.com/OdurShi/vd-opd/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
+  <a href="https://github.com/astral-sh/ruff"><img src="https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json" alt="Code style: ruff"></a>
+</p>
 
-## Overview
+<p align="center">
+  <a href="#main-results">Main results</a> ·
+  <a href="#quick-start">Quick start</a> ·
+  <a href="#reproducing-the-paper">Reproduce</a> ·
+  <a href="#supplementary-experiments">Supplementary experiments</a> ·
+  <a href="#method-to-code-map">Code map</a>
+</p>
+
+<p align="center">
+  <img src="assets/paper_figures/fig01.png" width="92%" alt="From teacher imitation to consensus supervision (Figure 1 of the paper)">
+</p>
+
+On-policy distillation in which a frozen teacher is queried under two task-preserving prompt
+views at the same student-generated prefix; the probability mass the two views share defines
+both the distillation target and its weight. No answer labels are used, and inference uses
+the student alone.
+
+## Highlights
+
+- **Best student on every benchmark.** With a Qwen3-8B teacher and a Qwen3-1.7B student,
+  VD-OPD reaches 67.8 Avg@8 on MATH500 against 66.0 for the strongest baseline, EOPD (full),
+  and the highest score on all six mathematics benchmarks (Table 1).
+- **Holds across students.** VD-OPD improves the mean Avg@8 in all 18 student-benchmark
+  comparisons for Qwen3-1.7B, Qwen3-4B and Llama-3.2-3B; the gains on MATH500, Minerva and
+  OlympiadBench have positive 95% confidence intervals for all three students (E01).
+- **Not explained by extra compute.** At equal total FLOPs the macro Avg@8 is 36.00 against
+  34.82, and at equal teacher views and updates 36.70 against 35.30; both gains have positive
+  95% confidence intervals (E06).
+- **More robust to unseen prompts.** VD-OPD has the highest mean-view, worst-view and
+  worst-template accuracy on held-out prompt wrappers, structural changes and verified
+  paraphrases, including against student-side prompt augmentation (E14, E15).
+- **Reproducible from this repository.** Training data and splits, one config per method,
+  the reported tables as CSV, and a CPU quick start are included.
+
+## Main results
+
+Results reported in the paper and in the supplementary experiments; the figures are drawn
+from the CSV files in [`results/supplementary/`](results/supplementary/README.md) by
+`scripts/plot_supplementary.py`.
+
+![Macro Avg@8 by method and student (E02-E04)](assets/supplementary/e02_e04_macro_by_method.png)
+
+![Gain of VD-OPD over EOPD(full) per student and benchmark (E01)](assets/supplementary/e01_gain_by_benchmark.png)
+
+**Controls matched in total FLOPs and in teacher views and updates (E06, extends Table 2).**
+
+<!-- supplementary:E06 -->
+| Comparison | Budget matched | Baseline FLOPs (1e18) | VD FLOPs (1e18) | Baseline Macro Avg@8 (mean ± SD) | VD Macro Avg@8 (mean ± SD) | VD gain [95% CI] |
+|---|---|---:|---:|---:|---:|---:|
+| EOPD(full) vs. VD-Budget | equal total FLOPs | 4.7 | 4.7 | 34.82 ± 0.62 | 36.00 ± 0.62 | +1.2 [+0.2, +2.2] |
+| EOPD(2V) vs. VD-OPD | equal two-view / update budget | 5.8 | 5.8 | 35.30 ± 0.63 | 36.70 ± 0.62 | +1.4 [+0.4, +2.4] |
+| EOPD(full) vs. VD-OPD | none (unmatched) | 4.7 | 5.8 | 34.82 ± 0.62 | 36.70 ± 0.62 | +1.9 [+0.9, +2.9] |
+<!-- /supplementary:E06 -->
+
+## Method
 
 In on-policy distillation the student generates its own responses and a stronger teacher
 tells it how each prefix should continue. A teacher's next-token distribution can be broad
@@ -20,12 +76,6 @@ prediction depends on incidental prompt wording. VD-OPD separates the two by sco
 student prefix under two prompt views, the original prompt and the same prompt with a short
 generic prefix such as `Problem:`.
 
-![From teacher imitation to consensus supervision (Figure 1 of the paper)](assets/paper_figures/fig01.png)
-
-*Figure 1 of the paper. Left: matching a single teacher view can transfer prompt-sensitive
-predictions. Middle: task-preserving views can disagree at the same student prefix. Right:
-VD-OPD learns what both views support and reduces supervision when they disagree.*
-
 At every response position the two teacher distributions `p1`, `p2` are combined into the
 *unnormalised* geometric consensus `c = sqrt(p1 * p2)`. Its shape says what to imitate and
 its total mass `Z = sum(c)` (the Bhattacharyya affinity, in `[0, 1]`) says how strongly. The
@@ -33,7 +83,9 @@ loss is `-(1/N_k) sum c^T log q`, i.e. forward-KL distillation toward `c / Z` wi
 `Z`: identical views reproduce ordinary full-weight distillation, disjoint views contribute
 nothing. No answer labels are used, and inference uses the student alone.
 
-![Training procedure of VD-OPD (Figure 3 of the paper)](assets/paper_figures/fig03.png)
+<p align="center">
+  <img src="assets/paper_figures/fig03.png" width="92%" alt="Training procedure of VD-OPD (Figure 3 of the paper)">
+</p>
 
 *Figure 3 of the paper. Both teacher views are evaluated at the same student prefix; teacher
 predictions are detached throughout the student update.*
@@ -132,6 +184,9 @@ Reference rows: `vdopd eval --config configs/qwen3_1p7b/vdopd.yaml --output
 results/qwen3_1p7b/initial_student/seed11.json` evaluates the initial student; add
 `--student Qwen/Qwen3-8B` for the frozen teacher.
 
+<details>
+<summary><b>Commands for every table and figure of the paper</b></summary>
+
 | Paper item | Command | Configs |
 |---|---|---|
 | Table 1, Table 6 (Avg@8, Pass@8, Qwen3-1.7B-Base) | `scripts/run_experiment.sh <config>` per method, then `python scripts/aggregate_results.py --results-dir results/qwen3_1p7b [--metric pass_at_k]` | `configs/qwen3_1p7b/{gkd_fkl,gkd_rkl,gkd_jsd,sampled_opd,eopd_top16,eopd_full,vdopd}.yaml` |
@@ -143,6 +198,8 @@ results/qwen3_1p7b/initial_student/seed11.json` evaluates the initial student; a
 | Figure 5 (accuracy vs. teacher-scoring FLOPs) | `vdopd train ... --set train.max_teacher_flops=<budget>`, then `python scripts/teacher_flops_curve.py --root runs/fig5` | `configs/qwen3_1p7b/{eopd_full,vdopd}.yaml` |
 | Figure 6, Table 12 (local-update utility) | `python scripts/local_update_diagnostic.py --config configs/qwen3_1p7b/vdopd.yaml --plot fig6.png` | `configs/qwen3_1p7b/vdopd.yaml` |
 | Theorem 1, Lemmas 3-4, Corollaries 5-6, Propositions 7 and 9, Theorem 8 | `pytest tests/test_theory.py` | - |
+
+</details>
 
 The two diagnostic scripts also accept `--toy` to run on the tiny models of the quick start.
 Implementation choices for details the paper leaves open are recorded in
@@ -165,7 +222,7 @@ Implementation choices for details the paper leaves open are recorded in
 Further objectives plug into the same training loop through
 `vdopd.objectives.register_objective`.
 
-### Supplementary experiments
+### Commands for the supplementary experiments
 
 The supplementary experiments E01-E18 use the same training and evaluation commands; their
 reported tables are in [docs/supplementary_results.md](docs/supplementary_results.md). In the
@@ -178,6 +235,9 @@ python scripts/supplementary_tables.py --results-dir results --runs-dir runs --o
 which turns the per-seed evaluation files into CSV tables with the file and column names of
 [`results/supplementary/`](results/supplementary/README.md): mean and SD over seeds, and 95%
 confidence intervals from a paired question bootstrap (`vdopd/eval/bootstrap.py`).
+
+<details>
+<summary><b>Commands and code for E01-E18</b></summary>
 
 | ID | What | Command | Configs / code |
 |---|---|---|---|
@@ -196,121 +256,15 @@ confidence intervals from a paired question bootstrap (`vdopd/eval/bootstrap.py`
 | E17 | Five matched local updates: oracle KL, shared-wrong probability, correctness, by Z stratum with CIs | `python scripts/local_update_diagnostic.py --config configs/qwen3_1p7b/vdopd.yaml --supplementary --checkpoint <checkpoint> --candidates <candidates.jsonl> --csv out/E17.csv` (`--toy --supplementary` on CPU) | `vdopd/diagnostics.py` (`matched_branch_updates`, `oracle_kl_decrease`, `stratum_means`) |
 | E18 | Two-token example: same normalised target, Z = 1 versus Z = 0.199 | `python examples/two_token_example.py` | `vdopd/theory.py` (`two_token_example`) |
 
+</details>
+
 E10 and the paraphrase family of E14-E15 read externally written, validated prompt views
 from a JSON Lines file (one record per problem and view; schema and checks in
 `vdopd/view_pools.py`). `objective.num_views` sets the number of teacher views of the
 consensus objectives, `views.student_wrap_probability` enables student-side prompt
 augmentation, and `evaluation.view_families` selects the held-out view families.
 
-## Method-to-code map
-
-| Paper | Code |
-|---|---|
-| Eq. 1, JS divergence between views | `vdopd/consensus.py: js_divergence` |
-| Eq. 2, App. A.1, two teacher views at the same prefix | `vdopd/scoring.py: pack_prompt_and_response, iter_log_prob_blocks` |
-| Table 5, App. A.1, wrappers and validity | `vdopd/views.py: TRAIN_WRAPPERS, apply_wrapper, select_views` |
-| App. B.2.2, held-out wrappers | `vdopd/views.py: EVAL_WRAPPERS` |
-| Eq. 3, square-root decomposition | `vdopd/consensus.py: view_decomposition` |
-| Eq. 4-5, consensus target and mass | `vdopd/consensus.py: geometric_consensus` |
-| Eq. 6, generalised-KL barycentre | `vdopd/consensus.py: generalized_kl` |
-| Eq. 7, consensus loss; Table 4 variants | `vdopd/objectives.py: ConsensusObjective, assign_weights` |
-| Eq. 13, EOPD-2V; App. B.3 baselines | `vdopd/objectives.py: TwoViewAverage, EOPD, SampledTokenOPD, ForwardKL, ReverseKL, GeneralizedJSD` |
-| Algorithm 1, App. A.2 | `vdopd/trainer.py: Trainer.train_step, collect_rollouts, accumulate_gradients, apply_update` |
-| App. B.1, MATH split | `vdopd/data/math_train.py`, `scripts/make_math_splits.py` |
-| App. B.4, optimizer and schedule | `vdopd/optim.py` |
-| App. B.5, FLOPs accounting | `vdopd/flops.py` |
-| Eq. 9, App. B.7, local-update diagnostics | `vdopd/diagnostics.py: position_statistics, matched_branch_updates, binned_utility_summary` |
-| Eq. 10, Avg@8 / Pass@8 | `vdopd/eval/metrics.py: avg_at_k, pass_at_k` |
-| Eq. 11-12, MeanView / WorstView / WorstTemplate | `vdopd/eval/metrics.py: view_robustness` |
-| Eq. 14, seed statistics | `vdopd/eval/metrics.py: seed_mean_and_sd` |
-| Eq. 15-22, target-improvement diagnostic | `vdopd/diagnostics.py: candidate_logits`, `vdopd/theory.py` |
-| Section 4.4, App. D, theory | `vdopd/theory.py`, `tests/test_theory.py` |
-
-The full map and the technical record are in
-[docs/implementation_notes.md](docs/implementation_notes.md).
-
-## Results
-
-The tables and figures in this section are the results reported in the paper. Unless noted,
-the teacher is Qwen3-8B, the student is Qwen3-1.7B-Base, and scores are three-seed means in
-percent.
-
-**Results from the paper (Table 1): mathematical reasoning, zero-shot Avg@8.**
-
-| Category | Method | MATH500 | AMC23 | AIME24 | AIME25 | Minerva | Olymp. | Mean |
-|---|---|---|---|---|---|---|---|---|
-| Reference models | Frozen teacher | 72.8 | 51.4 | 16.7 | 12.5 | 38.6 | 43.1 | 39.2 |
-| | Initial student | 54.7 | 32.8 | 8.3 | 5.1 | 25.4 | 30.2 | 26.1 |
-| Standard distillation | GKD-FKL | 58.9 | 36.1 | 9.7 | 6.2 | 27.8 | 33.0 | 28.6 |
-| | GKD-RKL (full) | 59.6 | 36.8 | 10.1 | 6.5 | 28.4 | 33.7 | 29.2 |
-| | GKD-JSD | 60.1 | 37.5 | 10.4 | 6.9 | 28.9 | 34.2 | 29.7 |
-| | Sampled-token OPD | 62.4 | 39.8 | 11.7 | 7.8 | 30.7 | 36.0 | 31.4 |
-| Adaptive supervision | ToDi-OP | 63.1 | 40.5 | 12.4 | 8.3 | 31.5 | 36.8 | 32.1 |
-| | TSD-KD | 63.8 | 41.2 | 12.8 | 8.9 | 32.1 | 37.5 | 32.7 |
-| | EOPD (top-16) | 65.1 | 42.8 | 13.9 | 9.9 | 33.7 | 39.1 | 34.1 |
-| | EOPD (full) | 66.0 | 43.6 | 14.4 | 10.4 | 34.5 | 40.0 | 34.8 |
-| Target reformulation | Veto | 64.2 | 41.7 | 13.1 | 9.2 | 32.8 | 38.0 | 33.2 |
-| | **VD-OPD** | **67.8** | **45.9** | **15.8** | **11.7** | **36.9** | **42.1** | **36.7** |
-
-**Results from the paper (Figure 4): gains over the initial student on MATH500 for three
-student backbones.**
-
-![Generalization across student sizes and model families on MATH500 (Figure 4 of the paper)](assets/paper_figures/fig04.png)
-
-**Results from the paper (Table 2): teacher-access and total-compute controls.**
-
-| Method | Views | FLOPs (1e18) | GPU-h | MATH500 Avg@8 | MATH500 Pass@8 | Six-math Avg@8 | Six-math Pass@8 |
-|---|---|---|---|---|---|---|---|
-| *Matched total FLOPs* | | | | | | | |
-| EOPD (full) | 1 | 4.7 | 30.3 | 66.0 | 87.5 | 34.8 | 55.5 |
-| VD-OPD-Budget | 2 | 4.7 | 30.5 | **67.0** | **88.2** | **36.0** | **57.0** |
-| *Matched two-view access and rollout/update counts* | | | | | | | |
-| EOPD-2V | 2 | 5.8 | 37.0 | 66.5 | 87.9 | 35.3 | 56.1 |
-| VD-OPD | 2 | 5.8 | 37.2 | **67.8** | **88.7** | **36.7** | **57.6** |
-
-**Results from the paper (Figure 5): accuracy versus teacher-scoring computation.**
-
-![Accuracy versus teacher-scoring computation (Figure 5 of the paper)](assets/paper_figures/fig05.png)
-
-**Results from the paper (Table 3): robustness to unseen prompt wrappers (macro-average over
-the six mathematics benchmarks) and cross-domain accuracy.**
-
-| Method | Mean view | Worst view | Worst template | GPQA-Diamond | MMLU-Pro |
-|---|---|---|---|---|---|
-| Frozen teacher | 35.8 | 32.4 | 33.1 | 42.1 | 51.7 |
-| Initial student | 25.9 | 21.8 | 22.7 | 34.5 | 41.8 |
-| GKD-FKL | 28.1 | 23.6 | 24.5 | 35.9 | 43.0 |
-| Sampled-token OPD | 30.0 | 25.8 | 26.7 | 36.9 | 44.2 |
-| ToDi-OP | 30.9 | 26.7 | 27.8 | 37.5 | 44.8 |
-| TSD-KD | 31.5 | 27.3 | 28.5 | 38.0 | 45.3 |
-| EOPD (full) | 32.8 | 28.9 | 30.1 | 39.1 | 46.7 |
-| Veto | 31.9 | 27.9 | 29.0 | 38.4 | 45.8 |
-| **VD-OPD** | **33.7** | **30.2** | **31.1** | **40.6** | **48.2** |
-
-**Results from the paper (Table 4): target-shape and weight ablation.**
-
-| Configuration | Target | Weight | MATH500 Avg@8 | MATH500 Pass@8 | Six-math Avg@8 | Six-math Pass@8 |
-|---|---|---|---|---|---|---|
-| Arithmetic | arithmetic mean | 1 | 66.1 | 87.8 | 35.0 | 56.1 |
-| Weighted arithmetic | arithmetic mean | `Z_t` | 66.8 | 88.1 | 35.7 | 56.8 |
-| Geometric | `c_t / Z_t` | 1 | 67.2 | 88.4 | 36.1 | 57.2 |
-| **VD-OPD** | `c_t / Z_t` | `Z_t` | **67.8** | **88.7** | **36.7** | **57.6** |
-| Shuffled weight | `c_t / Z_t` | `Z_pi(t)` | 67.3 | 88.5 | 36.2 | 57.3 |
-| Batch-mean weight | `c_t / Z_t` | batch mean of `Z_t` | 67.5 | 88.6 | 36.4 | 57.4 |
-
-**Results from the paper (Figures 2 and 6): teacher entropy versus cross-view variation
-across 5,000 paired predictions, and consensus mass versus local consensus-fit utility.**
-
-![Teacher entropy and cross-view variation (Figure 2 of the paper)](assets/paper_figures/fig02.png)
-
-![Consensus mass and utility (Figure 6 of the paper)](assets/paper_figures/fig06.png)
-
-All figures of the paper, with their captions, are in
-[`assets/paper_figures/`](assets/paper_figures/README.md). Example outputs of the
-reduced-scale configurations (`configs/reduced_scale/`) are in
-[`results/reduced_scale/`](results/reduced_scale/).
-
-### Supplementary results
+## Supplementary experiments
 
 Supplementary experiments E01-E18 extend the tables above with seed variation, 95% confidence
 intervals, compute- and view-matched controls, further ablations, prompt-robustness tests and
@@ -320,27 +274,6 @@ all eighteen tables with their setup and key findings are in
 [docs/supplementary_results.md](docs/supplementary_results.md), and the figures below are drawn
 from the CSV files by `scripts/plot_supplementary.py`. SD is across three training seeds;
 confidence intervals use a paired question bootstrap.
-
-**Supplementary results (E01): gain of VD-OPD over EOPD (full) in Avg@8 for three students,
-with 95% confidence intervals.**
-
-![Gain of VD-OPD over EOPD(full) per student and benchmark (E01)](assets/supplementary/e01_gain_by_benchmark.png)
-
-**Supplementary results (E02-E04): macro Avg@8 over the six benchmarks for every method and
-student (complete Tables 6-8).**
-
-![Macro Avg@8 by method and student (E02-E04)](assets/supplementary/e02_e04_macro_by_method.png)
-
-**Supplementary results (E06): controls matched in total FLOPs and in teacher views and
-updates (extends Table 2).**
-
-<!-- supplementary:E06 -->
-| Comparison | Budget matched | Baseline FLOPs (1e18) | VD FLOPs (1e18) | Baseline Macro Avg@8 (mean ± SD) | VD Macro Avg@8 (mean ± SD) | VD gain [95% CI] |
-|---|---|---:|---:|---:|---:|---:|
-| EOPD(full) vs. VD-Budget | equal total FLOPs | 4.7 | 4.7 | 34.82 ± 0.62 | 36.00 ± 0.62 | +1.2 [+0.2, +2.2] |
-| EOPD(2V) vs. VD-OPD | equal two-view / update budget | 5.8 | 5.8 | 35.30 ± 0.63 | 36.70 ± 0.62 | +1.4 [+0.4, +2.4] |
-| EOPD(full) vs. VD-OPD | none (unmatched) | 4.7 | 5.8 | 34.82 ± 0.62 | 36.70 ± 0.62 | +1.9 [+0.9, +2.9] |
-<!-- /supplementary:E06 -->
 
 **Supplementary results (E07): target and weight ablation with seed variation (extends
 Table 4).**
@@ -370,6 +303,129 @@ augmentation baselines.**
 quartiles.**
 
 ![Matched local updates by agreement stratum (E17)](assets/supplementary/e17_local_updates.png)
+
+## Method-to-code map
+
+| Paper | Code |
+|---|---|
+| Eq. 1, JS divergence between views | `vdopd/consensus.py: js_divergence` |
+| Eq. 2, App. A.1, two teacher views at the same prefix | `vdopd/scoring.py: pack_prompt_and_response, iter_log_prob_blocks` |
+| Table 5, App. A.1, wrappers and validity | `vdopd/views.py: TRAIN_WRAPPERS, apply_wrapper, select_views` |
+| App. B.2.2, held-out wrappers | `vdopd/views.py: EVAL_WRAPPERS` |
+| Eq. 3, square-root decomposition | `vdopd/consensus.py: view_decomposition` |
+| Eq. 4-5, consensus target and mass | `vdopd/consensus.py: geometric_consensus` |
+| Eq. 6, generalised-KL barycentre | `vdopd/consensus.py: generalized_kl` |
+| Eq. 7, consensus loss; Table 4 variants | `vdopd/objectives.py: ConsensusObjective, assign_weights` |
+| Eq. 13, EOPD-2V; App. B.3 baselines | `vdopd/objectives.py: TwoViewAverage, EOPD, SampledTokenOPD, ForwardKL, ReverseKL, GeneralizedJSD` |
+| Algorithm 1, App. A.2 | `vdopd/trainer.py: Trainer.train_step, collect_rollouts, accumulate_gradients, apply_update` |
+| App. B.1, MATH split | `vdopd/data/math_train.py`, `scripts/make_math_splits.py` |
+| App. B.4, optimizer and schedule | `vdopd/optim.py` |
+| App. B.5, FLOPs accounting | `vdopd/flops.py` |
+| Eq. 9, App. B.7, local-update diagnostics | `vdopd/diagnostics.py: position_statistics, matched_branch_updates, binned_utility_summary` |
+| Eq. 10, Avg@8 / Pass@8 | `vdopd/eval/metrics.py: avg_at_k, pass_at_k` |
+| Eq. 11-12, MeanView / WorstView / WorstTemplate | `vdopd/eval/metrics.py: view_robustness` |
+| Eq. 14, seed statistics | `vdopd/eval/metrics.py: seed_mean_and_sd` |
+| Eq. 15-22, target-improvement diagnostic | `vdopd/diagnostics.py: candidate_logits`, `vdopd/theory.py` |
+| Section 4.4, App. D, theory | `vdopd/theory.py`, `tests/test_theory.py` |
+
+The full map and the technical record are in
+[docs/implementation_notes.md](docs/implementation_notes.md).
+
+## Full results
+
+The tables and figures in this section are the results reported in the paper. Unless noted,
+the teacher is Qwen3-8B, the student is Qwen3-1.7B-Base, and scores are three-seed means in
+percent.
+
+<details>
+<summary><b>Results from the paper (Table 1): mathematical reasoning, zero-shot Avg@8.</b></summary>
+
+| Category | Method | MATH500 | AMC23 | AIME24 | AIME25 | Minerva | Olymp. | Mean |
+|---|---|---|---|---|---|---|---|---|
+| Reference models | Frozen teacher | 72.8 | 51.4 | 16.7 | 12.5 | 38.6 | 43.1 | 39.2 |
+| | Initial student | 54.7 | 32.8 | 8.3 | 5.1 | 25.4 | 30.2 | 26.1 |
+| Standard distillation | GKD-FKL | 58.9 | 36.1 | 9.7 | 6.2 | 27.8 | 33.0 | 28.6 |
+| | GKD-RKL (full) | 59.6 | 36.8 | 10.1 | 6.5 | 28.4 | 33.7 | 29.2 |
+| | GKD-JSD | 60.1 | 37.5 | 10.4 | 6.9 | 28.9 | 34.2 | 29.7 |
+| | Sampled-token OPD | 62.4 | 39.8 | 11.7 | 7.8 | 30.7 | 36.0 | 31.4 |
+| Adaptive supervision | ToDi-OP | 63.1 | 40.5 | 12.4 | 8.3 | 31.5 | 36.8 | 32.1 |
+| | TSD-KD | 63.8 | 41.2 | 12.8 | 8.9 | 32.1 | 37.5 | 32.7 |
+| | EOPD (top-16) | 65.1 | 42.8 | 13.9 | 9.9 | 33.7 | 39.1 | 34.1 |
+| | EOPD (full) | 66.0 | 43.6 | 14.4 | 10.4 | 34.5 | 40.0 | 34.8 |
+| Target reformulation | Veto | 64.2 | 41.7 | 13.1 | 9.2 | 32.8 | 38.0 | 33.2 |
+| | **VD-OPD** | **67.8** | **45.9** | **15.8** | **11.7** | **36.9** | **42.1** | **36.7** |
+
+</details>
+
+
+**Results from the paper (Figure 4): gains over the initial student on MATH500 for three
+student backbones.**
+
+![Generalization across student sizes and model families on MATH500 (Figure 4 of the paper)](assets/paper_figures/fig04.png)
+
+<details>
+<summary><b>Results from the paper (Table 2): teacher-access and total-compute controls.</b></summary>
+
+| Method | Views | FLOPs (1e18) | GPU-h | MATH500 Avg@8 | MATH500 Pass@8 | Six-math Avg@8 | Six-math Pass@8 |
+|---|---|---|---|---|---|---|---|
+| *Matched total FLOPs* | | | | | | | |
+| EOPD (full) | 1 | 4.7 | 30.3 | 66.0 | 87.5 | 34.8 | 55.5 |
+| VD-OPD-Budget | 2 | 4.7 | 30.5 | **67.0** | **88.2** | **36.0** | **57.0** |
+| *Matched two-view access and rollout/update counts* | | | | | | | |
+| EOPD-2V | 2 | 5.8 | 37.0 | 66.5 | 87.9 | 35.3 | 56.1 |
+| VD-OPD | 2 | 5.8 | 37.2 | **67.8** | **88.7** | **36.7** | **57.6** |
+
+</details>
+
+
+**Results from the paper (Figure 5): accuracy versus teacher-scoring computation.**
+
+![Accuracy versus teacher-scoring computation (Figure 5 of the paper)](assets/paper_figures/fig05.png)
+
+<details>
+<summary><b>Results from the paper (Table 3): robustness to unseen prompt wrappers (macro-average over the six mathematics benchmarks) and cross-domain accuracy.</b></summary>
+
+| Method | Mean view | Worst view | Worst template | GPQA-Diamond | MMLU-Pro |
+|---|---|---|---|---|---|
+| Frozen teacher | 35.8 | 32.4 | 33.1 | 42.1 | 51.7 |
+| Initial student | 25.9 | 21.8 | 22.7 | 34.5 | 41.8 |
+| GKD-FKL | 28.1 | 23.6 | 24.5 | 35.9 | 43.0 |
+| Sampled-token OPD | 30.0 | 25.8 | 26.7 | 36.9 | 44.2 |
+| ToDi-OP | 30.9 | 26.7 | 27.8 | 37.5 | 44.8 |
+| TSD-KD | 31.5 | 27.3 | 28.5 | 38.0 | 45.3 |
+| EOPD (full) | 32.8 | 28.9 | 30.1 | 39.1 | 46.7 |
+| Veto | 31.9 | 27.9 | 29.0 | 38.4 | 45.8 |
+| **VD-OPD** | **33.7** | **30.2** | **31.1** | **40.6** | **48.2** |
+
+</details>
+
+
+<details>
+<summary><b>Results from the paper (Table 4): target-shape and weight ablation.</b></summary>
+
+| Configuration | Target | Weight | MATH500 Avg@8 | MATH500 Pass@8 | Six-math Avg@8 | Six-math Pass@8 |
+|---|---|---|---|---|---|---|
+| Arithmetic | arithmetic mean | 1 | 66.1 | 87.8 | 35.0 | 56.1 |
+| Weighted arithmetic | arithmetic mean | `Z_t` | 66.8 | 88.1 | 35.7 | 56.8 |
+| Geometric | `c_t / Z_t` | 1 | 67.2 | 88.4 | 36.1 | 57.2 |
+| **VD-OPD** | `c_t / Z_t` | `Z_t` | **67.8** | **88.7** | **36.7** | **57.6** |
+| Shuffled weight | `c_t / Z_t` | `Z_pi(t)` | 67.3 | 88.5 | 36.2 | 57.3 |
+| Batch-mean weight | `c_t / Z_t` | batch mean of `Z_t` | 67.5 | 88.6 | 36.4 | 57.4 |
+
+</details>
+
+
+**Results from the paper (Figures 2 and 6): teacher entropy versus cross-view variation
+across 5,000 paired predictions, and consensus mass versus local consensus-fit utility.**
+
+![Teacher entropy and cross-view variation (Figure 2 of the paper)](assets/paper_figures/fig02.png)
+
+![Consensus mass and utility (Figure 6 of the paper)](assets/paper_figures/fig06.png)
+
+All figures of the paper, with their captions, are in
+[`assets/paper_figures/`](assets/paper_figures/README.md). Example outputs of the
+reduced-scale configurations (`configs/reduced_scale/`) are in
+[`results/reduced_scale/`](results/reduced_scale/).
 
 ## Repository structure
 
